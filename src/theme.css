@@ -20,6 +20,7 @@
   --warn: #FFC439;
   --radius: 24px;
   --mono: 'Figtree Variable', 'Figtree', system-ui, sans-serif;
+  --body: 'Instrument Sans Variable', 'Instrument Sans', system-ui, sans-serif;
   --display: 'Figtree Variable', 'Figtree', system-ui, sans-serif;
   color-scheme: dark;
 }
@@ -30,7 +31,7 @@ html, body { margin: 0; min-height: 100%; }
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Figtree Variable', 'Figtree', system-ui, -apple-system, sans-serif;
+  font-family: var(--body);
   font-size: 15.5px;
   line-height: 1.4;
   font-feature-settings: 'tnum' 1;
@@ -55,6 +56,7 @@ input[type="file"] { display: none; }
 
 .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; min-height: 32px; }
 .top img { height: 20px; display: block; }
+.h1, .stat-v, .ex-name, .ex-top, .card-title .label, .btn, .mono, .nav button, .chip.on, .seg button, .prbadge { font-family: var(--display); }
 .h1 { font-weight: 800; font-size: 34px; line-height: 1.08; letter-spacing: -0.03em; margin: 4px 0 0; }
 .sub { color: var(--text-2); font-size: 14px; margin-top: 6px; }
 .label { font-size: 13px; font-weight: 500; color: var(--text-2); letter-spacing: 0; text-transform: none; }
@@ -121,9 +123,9 @@ input[type="file"] { display: none; }
 .ex-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .ex-name { font-weight: 700; font-size: 17px; letter-spacing: -0.02em; }
 .ex-top { white-space: nowrap; font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
-.sets { display: flex; flex-wrap: wrap; gap: 6px; }
-.set { font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); }
-.set.top { color: #000; background: #fff; }
+.sets { display: flex; flex-wrap: wrap; align-items: flex-start; align-content: flex-start; gap: 6px; }
+.set { display: inline-block; white-space: nowrap; line-height: 1.2; font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); }
+.set.best { color: #000; background: #fff; }
 
 .table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .table th { text-align: left; font-size: 12px; font-weight: 500; color: var(--text-2); padding: 0 0 10px; }

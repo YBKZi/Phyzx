@@ -35,7 +35,7 @@ function ExerciseCard({ ex, model, lang, exLang, unit, t }) {
         <Sparkline values={series} color={color} height={46} />
         <div className="sets">
           {ex.sets.map((s, i) => (
-            <span key={i} className={`set ${i === topIdx ? 'top' : ''}`}>{s.kg > 0 ? `${w(s.kg, unit, ex.name)}×${s.reps}` : `${s.reps} ${t('reps')}`}</span>
+            <span key={i} className={`set ${i === topIdx ? 'best' : ''}`}>{s.kg > 0 ? `${w(s.kg, unit, ex.name)}×${s.reps}` : `${s.reps} ${t('reps')}`}</span>
           ))}
         </div>
       </div>

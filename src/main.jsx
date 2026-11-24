@@ -1,5 +1,6 @@
 import React from 'react';
 import '@fontsource-variable/figtree';
+import '@fontsource-variable/instrument-sans';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './theme.css';

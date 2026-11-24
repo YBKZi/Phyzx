@@ -25,17 +25,17 @@ class ErrorBoundary extends React.Component {
       return (
         <div style={{
           minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: '#05070B', color: '#EEF2F8', fontFamily: 'system-ui, sans-serif',
+          background: '#000000', color: '#FFFFFF', fontFamily: 'system-ui, sans-serif',
           padding: 24, textAlign: 'center',
         }}>
           <div style={{ maxWidth: 420 }}>
             <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>Si è verificato un errore imprevisto</div>
-            <div style={{ fontSize: 13, color: '#8B96A8', marginBottom: 20, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 13, color: '#8E8E93', marginBottom: 20, lineHeight: 1.5 }}>
               {this.state.error && this.state.error.message ? this.state.error.message : String(this.state.error)}
             </div>
             <button onClick={() => window.location.reload()} style={{
-              padding: '10px 20px', borderRadius: 10, border: 'none', background: '#5ADECD',
-              color: '#05070B', fontWeight: 600, cursor: 'pointer', fontSize: 14,
+              padding: '10px 20px', borderRadius: 10, border: 'none', background: '#2F8CFF',
+              color: '#000000', fontWeight: 600, cursor: 'pointer', fontSize: 14,
             }}>
               Ricarica l'app
             </button>

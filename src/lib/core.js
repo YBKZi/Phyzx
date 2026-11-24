@@ -26,15 +26,15 @@ export function fmtWeight(kgValue, unit) {
 export const GROUP_ORDER = ['Petto','Schiena','Spalle','Bicipiti','Tricipiti','Gambe','Addominali','Avambracci','Altro'];
 
 export const GROUP_COLOR = {
-  Petto: '#5ADECD',
-  Schiena: '#4FA8D8',
-  Spalle: '#8B7FE8',
-  Bicipiti: '#5AC9DE',
-  Tricipiti: '#C77FE0',
-  Gambe: '#7F8FE8',
-  Addominali: '#5AE0A8',
-  Avambracci: '#5AB8E0',
-  Altro: 'var(--text-secondary)',
+  Petto: '#2F8CFF',
+  Schiena: '#5CC8FF',
+  Spalle: '#A78BFA',
+  Bicipiti: '#FFC439',
+  Tricipiti: '#FF7A59',
+  Gambe: '#1FD17A',
+  Addominali: '#F472B6',
+  Avambracci: '#94A3B8',
+  Altro: '#6B7280',
 };
 
 export const LB_TO_KG = 0.453592;
@@ -152,10 +152,15 @@ export const EXERCISE_NAME_IT = {
   'Skiers': 'Sci',
 };
 
-export function translateExercise(name, lang) {
-  if (lang === 'en') return name;
-  return EXERCISE_NAME_IT[name] || name;
+// I nomi degli esercizi sono sempre e solo in inglese (nessuna traduzione).
+export function translateExercise(name) {
+  return name;
 }
+
+// Esercizi il cui peso è calcolato e mostrato sempre in libbre, a prescindere dalle preferenze.
+const LB_ONLY = /^(chest press|cable overhead tricep extensions?)$/i;
+export const isLbOnly = name => LB_ONLY.test(String(name || '').trim());
+export const unitFor = (name, unit) => (isLbOnly(name) ? 'lb' : unit);
 
 export const GROUP_NAME_EN = {
   Petto: 'Chest', Schiena: 'Back', Spalle: 'Shoulders', Bicipiti: 'Biceps',

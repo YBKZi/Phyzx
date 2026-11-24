@@ -56,7 +56,7 @@ function Converter({ t }) {
   );
 }
 
-export default function More({ model, lang, exLang, unit, setLang, setExLang, setUnit, onFile, importing, msg, onClear }) {
+export default function More({ model, lang, exLang, unit, setUnit, onFile, importing, msg, onClear }) {
   const t = makeT(lang);
   const first = model.workouts.length ? model.workouts[model.workouts.length - 1].date : null;
   return (
@@ -83,8 +83,6 @@ export default function More({ model, lang, exLang, unit, setLang, setExLang, se
       <Card>
         <div className="card-title"><Label>{t('prefs')}</Label></div>
         <div style={{ display: 'grid', gap: 14 }}>
-          <div className="row between"><span>{t('appLang')}</span><Segmented small value={lang} onChange={setLang} options={[{ value: 'it', label: 'IT' }, { value: 'en', label: 'EN' }]} /></div>
-          <div className="row between"><span>{t('exLang')}</span><Segmented small value={exLang} onChange={setExLang} options={[{ value: 'it', label: 'IT' }, { value: 'en', label: 'EN' }]} /></div>
           <div className="row between"><span>{t('unit')}</span><Segmented small value={unit} onChange={setUnit} options={[{ value: 'kg', label: 'KG' }, { value: 'lb', label: 'LB' }]} /></div>
         </div>
       </Card>

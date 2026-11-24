@@ -14,8 +14,8 @@ export default defineConfig({
         description: 'Esplora i tuoi allenamenti per gruppo muscolare, con progressione di forza stimata nel tempo',
         start_url: '.',
         display: 'standalone',
-        background_color: '#05070B',
-        theme_color: '#05070B',
+        background_color: '#000000',
+        theme_color: '#000000',
         orientation: 'portrait',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },

@@ -2,8 +2,8 @@ import React from 'react';
 import { pct } from '../lib/i18n.js';
 
 export const COLORS = {
-  accent: '#5ADECD', up: '#5AE0A8', down: '#F0788C', flat: '#8B96A8', warn: '#E6B450',
-  series: ['#5ADECD', '#8B7FE8', '#4FA8D8', '#E08AD0'],
+  accent: '#2F8CFF', up: '#1FD17A', down: '#FF4F5E', flat: '#8E8E93', warn: '#FFC439',
+  series: ['#2F8CFF', '#FFC439', '#A78BFA', '#FF7A59'],
 };
 
 export function Card({ children, className = '', style, onClick, as: Tag = 'div', ...rest }) {
@@ -116,8 +116,8 @@ export function Donut({ segments, size = 132, thickness = 14, children }) {
         {segments.map((s, i) => {
           const len = Math.max(0, (s.value / total) * c - gap);
           const el = (
-            <circle key={i} cx={size / 2} cy={size / 2} r={r} fill="none" stroke={s.color} strokeWidth={thickness} strokeLinecap="round"
-              strokeDasharray={`${len} ${c - len}`} strokeDashoffset={-acc} style={{ filter: `drop-shadow(0 0 6px ${s.color}55)` }} />
+            <circle key={i} cx={size / 2} cy={size / 2} r={r} fill="none" stroke={s.color} strokeWidth={thickness} strokeLinecap="butt"
+              strokeDasharray={`${len} ${c - len}`} strokeDashoffset={-acc}  />
           );
           acc += (s.value / total) * c;
           return el;

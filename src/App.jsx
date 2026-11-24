@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Papa from 'papaparse';
 import logo from './assets/phyzx-logo.png';
-import { WORKOUT_DATA_KEY, LANG_APP_KEY, LANG_EXERCISE_KEY, UNITS_KEY } from './lib/core.js';
+import { WORKOUT_DATA_KEY, UNITS_KEY } from './lib/core.js';
 import { buildModel, liftoffRowsToRaw, mergeRows, normalizeRows, snapKg } from './lib/stats.js';
 import { makeT } from './lib/i18n.js';
 import { Icon, Label } from './ui/kit.jsx';
@@ -52,7 +52,7 @@ function FirstUpload({ onFile, importing, msg, t }) {
         <div style={{ display: 'grid', gap: 10 }}>
           {['step1', 'step2', 'step3'].map((k, i) => (
             <div key={k} className="card row" style={{ padding: 14, gap: 14 }}>
-              <span className="mono" style={{ width: 28, height: 28, borderRadius: 10, display: 'grid', placeItems: 'center', background: 'rgba(90,222,205,.12)', border: '1px solid rgba(90,222,205,.3)', color: 'var(--accent)', fontSize: 12 }}>{i + 1}</span>
+              <span className="mono" style={{ width: 28, height: 28, borderRadius: 10, display: 'grid', placeItems: 'center', background: 'var(--surface-2)', color: '#fff', fontSize: 12 }}>{i + 1}</span>
               <span style={{ fontSize: 13.5 }}>{t(k)}</span>
             </div>
           ))}
@@ -69,8 +69,8 @@ function FirstUpload({ onFile, importing, msg, t }) {
 
 export default function App() {
   const [raw, setRaw] = useState(loadRaw);
-  const [lang, setLangState] = useState(() => read(LANG_APP_KEY) || 'it');
-  const [exLang, setExLangState] = useState(() => read(LANG_EXERCISE_KEY) || 'it');
+  const lang = 'it';
+  const exLang = 'en';
   const [unit, setUnitState] = useState(() => read(UNITS_KEY) || 'kg');
   const [tab, setTab] = useState(() => read(TAB_KEY) || 'last');
   const [importing, setImporting] = useState(false);
@@ -79,10 +79,7 @@ export default function App() {
   const t = makeT(lang);
   const model = useMemo(() => buildModel(raw), [raw]);
 
-  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
-
-  const setLang = v => { setLangState(v); write(LANG_APP_KEY, v); };
-  const setExLang = v => { setExLangState(v); write(LANG_EXERCISE_KEY, v); };
+  
   const setUnit = v => { setUnitState(v); write(UNITS_KEY, v); };
   const go = next => { setTab(next); write(TAB_KEY, next); setMsg(null); try { window.scrollTo(0, 0); } catch (e) { /* noop */ } };
 
@@ -123,7 +120,7 @@ export default function App() {
         {tab === 'last' && <Last key="last" {...props} />}
         {tab === 'recent' && <Recent key="recent" {...props} />}
         {tab === 'progress' && <Progress key="progress" {...props} />}
-        {tab === 'more' && <More key="more" {...props} setLang={setLang} setExLang={setExLang} setUnit={setUnit} onFile={onFile} importing={importing} msg={msg} onClear={clearAll} />}
+        {tab === 'more' && <More key="more" {...props} setUnit={setUnit} onFile={onFile} importing={importing} msg={msg} onClear={clearAll} />}
       </div>
       <nav className="nav" aria-label="Navigazione">
         <div className="nav-in">

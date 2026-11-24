@@ -1,12 +1,12 @@
 import React from 'react';
 import { translateExercise, translateGroup, GROUP_COLOR } from '../lib/core.js';
-import { makeT, dateLong, relativeDay, wu, num } from '../lib/i18n.js';
+import { makeT, dateLong, relativeDay, w, wu, num } from '../lib/i18n.js';
 import { Card, Label, Stat, Delta, Donut, Sparkline, PRBadge, COLORS } from '../ui/kit.jsx';
 
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function topSetText(ex, unit, t) {
-  return ex.bw ? `${ex.topReps} ${t('reps')}` : `${wu(ex.topKg, unit)} × ${ex.topReps}`;
+  return ex.bw ? `${ex.topReps} ${t('reps')}` : `${wu(ex.topKg, unit, ex.name)} × ${ex.topReps}`;
 }
 
 function ExerciseCard({ ex, model, lang, exLang, unit, t }) {
@@ -21,7 +21,7 @@ function ExerciseCard({ ex, model, lang, exLang, unit, t }) {
         <div className="ex-head">
           <div>
             <div className="row" style={{ gap: 7, marginBottom: 3 }}>
-              <span className="dot" style={{ background: color, boxShadow: `0 0 10px ${color}88` }} />
+              <span className="dot" style={{ background: color }} />
               <span className="label" style={{ color }}>{translateGroup(ex.group, lang)}</span>
               {ex.isPR && <PRBadge label={t('pr')} />}
             </div>
@@ -35,7 +35,7 @@ function ExerciseCard({ ex, model, lang, exLang, unit, t }) {
         <Sparkline values={series} color={color} height={46} />
         <div className="sets">
           {ex.sets.map((s, i) => (
-            <span key={i} className={`set ${i === topIdx ? 'top' : ''}`}>{s.kg > 0 ? `${num(unit === 'lb' ? s.kg * 2.20462 : s.kg, 1)}×${s.reps}` : `${s.reps} ${t('reps')}`}</span>
+            <span key={i} className={`set ${i === topIdx ? 'top' : ''}`}>{s.kg > 0 ? `${w(s.kg, unit, ex.name)}×${s.reps}` : `${s.reps} ${t('reps')}`}</span>
           ))}
         </div>
       </div>
@@ -62,7 +62,7 @@ export default function Last({ model, lang, exLang, unit }) {
       <div className="grid3">
         <Stat value={wk.exercises.length} label={t('exercises')} />
         <Stat value={wk.totalSets} label={t('sets')} />
-        <Stat value={wk.prCount} label={t('records')} accent={wk.prCount ? '#E6B450' : undefined} />
+        <Stat value={wk.prCount} label={t('records')} accent={wk.prCount ? '#FFC439' : undefined} />
       </div>
 
       <Card>

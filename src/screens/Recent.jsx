@@ -25,8 +25,8 @@ function WeeklyBars({ weeks, lang, t }) {
               {w.workouts > 0 && <span className="mono" style={{ fontSize: 9.5, color: last ? COLORS.accent : 'var(--text-2)' }}>{w.workouts}</span>}
               <div style={{
                 width: '100%', height: `${Math.max(h, w.workouts ? 5 : 2)}%`, borderRadius: 7,
-                background: w.workouts ? (last ? 'linear-gradient(180deg,#5ADECD,#2fa898)' : 'linear-gradient(180deg,rgba(90,222,205,.55),rgba(90,222,205,.18))') : 'rgba(255,255,255,0.06)',
-                boxShadow: last && w.workouts ? '0 0 18px rgba(90,222,205,.45)' : 'none',
+                background: w.workouts ? (last ? 'linear-gradient(180deg,#2F8CFF,#1C5FCC)' : 'linear-gradient(180deg,rgba(47,140,255,.55),rgba(47,140,255,.18))') : 'rgba(255,255,255,0.06)',
+                
               }} />
             </div>
           );
@@ -45,7 +45,7 @@ function WeeklyBars({ weeks, lang, t }) {
 
 function Heatmap({ cols, lang, t }) {
   const level = n => (n === 0 ? 0 : n <= 8 ? 1 : n <= 16 ? 2 : n <= 24 ? 3 : 4);
-  const bg = ['rgba(255,255,255,0.05)', 'rgba(90,222,205,0.22)', 'rgba(90,222,205,0.42)', 'rgba(90,222,205,0.68)', '#5ADECD'];
+  const bg = ['rgba(255,255,255,0.05)', 'rgba(47,140,255,0.22)', 'rgba(47,140,255,0.42)', 'rgba(47,140,255,0.68)', '#2F8CFF'];
   const days = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
   const dayEn = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const lab = lang === 'en' ? dayEn : days;
@@ -60,7 +60,7 @@ function Heatmap({ cols, lang, t }) {
             <div key={c.date} title={c.date} style={{
               aspectRatio: '1', borderRadius: 5, background: c.future ? 'transparent' : bg[level(c.sets)],
               border: c.future ? '1px dashed rgba(255,255,255,0.05)' : 'none',
-              boxShadow: level(c.sets) === 4 ? '0 0 10px rgba(90,222,205,.5)' : 'none',
+              
             }} />
           )))}
         </div>
@@ -91,7 +91,7 @@ function Balance({ model, lang, t, today }) {
               <span className="mono" style={{ fontSize: 12 }}>{c} <span className={`delta ${d > 0 ? 'up' : d < 0 ? 'down' : 'flat'}`} style={{ marginLeft: 4 }}>{d > 0 ? '+' : ''}{d}</span></span>
             </div>
             <div style={{ position: 'relative', height: 7, borderRadius: 4, background: 'rgba(255,255,255,0.05)' }}>
-              <div style={{ position: 'absolute', inset: 0, width: `${(c / max) * 100}%`, borderRadius: 4, background: gColor(g), boxShadow: `0 0 12px ${gColor(g)}66` }} />
+              <div style={{ position: 'absolute', inset: 0, width: `${(c / max) * 100}%`, borderRadius: 4, background: gColor(g) }} />
               <div style={{ position: 'absolute', top: -3, bottom: -3, left: `${(p / max) * 100}%`, width: 2, borderRadius: 1, background: 'rgba(255,255,255,0.55)' }} />
             </div>
           </div>
@@ -108,7 +108,7 @@ function WorkoutRow({ wk, lang, exLang, unit, t, open, onToggle }) {
     <Card onClick={onToggle} style={{ padding: 14 }}>
       <div className="row between">
         <div className="row" style={{ gap: 12 }}>
-          <div style={{ width: 46, textAlign: 'center', padding: '6px 0', borderRadius: 14, background: 'var(--glass)', border: '1px solid var(--line)' }}>
+          <div style={{ width: 46, textAlign: 'center', padding: '6px 0', borderRadius: 14, background: 'var(--surface-2)' }}>
             <div className="label" style={{ fontSize: 9 }}>{dateWeekday(lang, wk.date)}</div>
             <div className="mono" style={{ fontSize: 17, lineHeight: 1.15 }}>{wk.date.slice(8)}</div>
           </div>

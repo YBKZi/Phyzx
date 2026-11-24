@@ -1,4 +1,4 @@
-import { fmtWeight, weightUnitLabel, convertWeight } from './core.js';
+import { fmtWeight, weightUnitLabel, convertWeight, unitFor } from './core.js';
 import { daysBetween, todayStr } from './stats.js';
 
 const STR = {
@@ -94,6 +94,7 @@ export function num(n, digits = 1) {
 export const pct = (v, digits = 1) => (v == null ? '–' : `${v > 0 ? '+' : ''}${num(v * 100, digits)}%`);
 
 // peso in kg interni → stringa con unità scelta
-export const w = (kg, unit) => fmtWeight(kg, unit);
-export const wu = (kg, unit) => `${fmtWeight(kg, unit)}${weightUnitLabel(unit)}`;
-export const wv = (kg, unit) => Math.round(convertWeight(kg, unit) * 10) / 10;
+export const w = (kg, unit, name) => fmtWeight(kg, unitFor(name, unit));
+export const wu = (kg, unit, name) => { const u = unitFor(name, unit); return `${fmtWeight(kg, u)}${weightUnitLabel(u)}`; };
+export const wv = (kg, unit, name) => Math.round(convertWeight(kg, unitFor(name, unit)) * 10) / 10;
+export const unitLabelFor = (name, unit) => weightUnitLabel(unitFor(name, unit));

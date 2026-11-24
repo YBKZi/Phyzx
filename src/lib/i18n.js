@@ -98,3 +98,7 @@ export const w = (kg, unit, name) => fmtWeight(kg, unitFor(name, unit));
 export const wu = (kg, unit, name) => { const u = unitFor(name, unit); return `${fmtWeight(kg, u)}${weightUnitLabel(u)}`; };
 export const wv = (kg, unit, name) => Math.round(convertWeight(kg, unitFor(name, unit)) * 10) / 10;
 export const unitLabelFor = (name, unit) => weightUnitLabel(unitFor(name, unit));
+
+export function topSetText(ex, unit, t) {
+  return ex.bw ? `${ex.topReps} ${t('reps')}` : `${wu(ex.topKg, unit, ex.name)} × ${ex.topReps}`;
+}

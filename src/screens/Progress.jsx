@@ -2,9 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { translateExercise, translateGroup, GROUP_COLOR } from '../lib/core.js';
 import { exerciseSummary, trainingPeriods, todayStr, addDays } from '../lib/stats.js';
-import { makeT, dateShort, dateDay, dateMonthYear, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
+import { topSetText, makeT, dateShort, dateDay, dateMonthYear, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
 import { Card, Label, Stat, Delta, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
-import { topSetText } from './Last.jsx';
 
 const RANGES = { '1m': 30, '3m': 91, '6m': 182, '1y': 365, all: null };
 const dayMs = s => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };

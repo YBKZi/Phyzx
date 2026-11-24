@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { translateExercise, translateGroup, GROUP_COLOR } from '../lib/core.js';
 import { weeklyCounts, heatmap, weekStreak, groupSetsBetween, addDays, daysBetween, todayStr } from '../lib/stats.js';
-import { makeT, dateDay, dateWeekday, relativeDay, num } from '../lib/i18n.js';
+import { topSetText, makeT, dateDay, dateWeekday, relativeDay, num } from '../lib/i18n.js';
 import { Card, Label, Stat, Delta, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
-import { topSetText } from './Last.jsx';
 
 const gColor = g => (GROUP_COLOR[g] && !GROUP_COLOR[g].startsWith('var') ? GROUP_COLOR[g] : COLORS.flat);
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);

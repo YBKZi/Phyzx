@@ -5,13 +5,11 @@ import { WORKOUT_DATA_KEY, UNITS_KEY } from './lib/core.js';
 import { buildModel, liftoffRowsToRaw, mergeRows, normalizeRows, snapKg } from './lib/stats.js';
 import { makeT } from './lib/i18n.js';
 import { Icon, Label } from './ui/kit.jsx';
-import Last from './screens/Last.jsx';
 import Recent from './screens/Recent.jsx';
 import Progress from './screens/Progress.jsx';
 import More from './screens/More.jsx';
 
 const MIGRATION_KEY = 'phyzx-data-v2';
-const TAB_KEY = 'phyzx-tab';
 
 const read = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const write = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* storage non disponibile */ } };
@@ -72,7 +70,7 @@ export default function App() {
   const lang = 'it';
   const exLang = 'en';
   const [unit, setUnitState] = useState(() => read(UNITS_KEY) || 'kg');
-  const [tab, setTab] = useState(() => read(TAB_KEY) || 'last');
+  const [tab, setTab] = useState('progress');
   const [importing, setImporting] = useState(false);
   const [msg, setMsg] = useState(null);
 
@@ -81,7 +79,7 @@ export default function App() {
 
   
   const setUnit = v => { setUnitState(v); write(UNITS_KEY, v); };
-  const go = next => { setTab(next); write(TAB_KEY, next); setMsg(null); try { window.scrollTo(0, 0); } catch (e) { /* noop */ } };
+  const go = next => { setTab(next); setMsg(null); try { window.scrollTo(0, 0); } catch (e) { /* noop */ } };
 
   async function onFile(file) {
     setImporting(true); setMsg(null);
@@ -104,9 +102,8 @@ export default function App() {
 
   const props = { model, lang, exLang, unit };
   const items = [
-    { key: 'last', label: t('navLast'), icon: 'last' },
-    { key: 'recent', label: t('navRecent'), icon: 'recent' },
     { key: 'progress', label: t('navProgress'), icon: 'progress' },
+    { key: 'recent', label: t('navRecent'), icon: 'recent' },
     { key: 'more', label: t('navMore'), icon: 'more' },
   ];
 
@@ -117,7 +114,6 @@ export default function App() {
           <img src={logo} alt="Phyzx" />
           <span className="pill mono" style={{ fontSize: 10.5 }}>{t('summary')(model.workouts.length, model.totalSets)}</span>
         </div>
-        {tab === 'last' && <Last key="last" {...props} />}
         {tab === 'recent' && <Recent key="recent" {...props} />}
         {tab === 'progress' && <Progress key="progress" {...props} />}
         {tab === 'more' && <More key="more" {...props} setUnit={setUnit} onFile={onFile} importing={importing} msg={msg} onClear={clearAll} />}

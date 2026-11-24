@@ -46,6 +46,7 @@ const DEFAULT_MIN_COUNT = 1;
 // Dizionario stringhe interfaccia: italiano e inglese
 const UI_STRINGS = {
   it: {
+    tabAnalysis: 'Analisi', tabTools: 'Strumenti', tabData: 'Dati',
     subtitle: 'Esplora i tuoi allenamenti',
     updateExport: 'Importa dati aggiornati',
     manage: 'Gestisci',
@@ -125,6 +126,7 @@ const UI_STRINGS = {
     close: 'Chiudi',
   },
   en: {
+    tabAnalysis: 'Analysis', tabTools: 'Tools', tabData: 'Data',
     subtitle: 'Explore your workouts',
     updateExport: 'Import updated data',
     manage: 'Manage',
@@ -713,10 +715,11 @@ function ImportMappingModal({ headers, onConfirm, onCancel, langApp, defaultWeig
 // Silhouette semplificata in stile "bodygraph": fronte/retro, zone colorabili.
 function BodyMap({ selected, onSelect, view, setView, availableGroups }) {
   const isAvail = (g) => availableGroups.has(g);
-  const fillFor = (g) => selected === g ? GROUP_COLOR[g] : (isAvail(g) ? 'var(--bg-card-active)' : 'var(--bg-card)');
+  const fillFor = (g) => selected === g ? GROUP_COLOR[g] : (isAvail(g) ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.03)');
+  const glow = (g) => selected === g ? { filter: `drop-shadow(0 0 9px ${GROUP_COLOR[g]}99)` } : {};
   const clickable = (g) => isAvail(g)
-    ? { cursor: 'pointer', transition: 'fill 0.15s ease, opacity 0.15s ease' }
-    : { cursor: 'default', opacity: 0.35, transition: 'fill 0.15s ease, opacity 0.15s ease' };
+    ? { cursor: 'pointer', transition: 'fill 0.2s ease, filter 0.2s ease', ...glow(g) }
+    : { cursor: 'default', opacity: 0.35, transition: 'fill 0.2s ease, filter 0.2s ease' };
   const handle = (g) => isAvail(g) ? () => onSelect(g) : undefined;
 
   return (
@@ -738,7 +741,11 @@ function BodyMap({ selected, onSelect, view, setView, availableGroups }) {
         }}>Retro</button>
       </div>
 
-      <svg className="bodymap-svg" viewBox="0 0 200 320" width="180" height="288" style={{ maxWidth: '100%', maxHeight: '60vh', height: 'auto' }}>
+      <svg className="bodymap-svg" viewBox="0 0 200 320" width="180" height="288" style={{ maxWidth: '100%', maxHeight: '60vh', height: 'auto', overflow: 'visible' }}>
+        {/* assi di riferimento anatomici: dettaglio da tavola scientifica */}
+        <line x1="100" y1="4" x2="100" y2="316" stroke="rgba(255,255,255,0.07)" strokeDasharray="2 5" />
+        <line x1="14" y1="62" x2="186" y2="62" stroke="rgba(255,255,255,0.05)" strokeDasharray="2 5" />
+        <line x1="14" y1="178" x2="186" y2="178" stroke="rgba(255,255,255,0.05)" strokeDasharray="2 5" />
         {/* testa: non corrisponde a nessun gruppo muscolare allenabile, resta sempre semi-trasparente e non cliccabile */}
         <circle cx="100" cy="35" r="18" fill='var(--bg-card-active)' stroke="var(--border-strong)" strokeWidth="1" opacity="0.35"/>
         {/* collo */}
@@ -1525,25 +1532,26 @@ function WorkoutBodyExplorer({ initialRaw, onDataChange, onClearData, langApp, l
   const [selected, setSelected] = useState('Petto');
   const [view, setView] = useState('front');
   const [compareExercises, setCompareExercises] = useState([]); // array di nomi esercizio in confronto
-  const [showManage, setShowManage] = useState(false);
-  // filtro "recentezza" nella sezione Gestisci: null = nessun filtro (mostra tutti gli esercizi
+  // navigazione a schede: analysis | tools | data | settings
+  const [tab, setTab] = useState('analysis');
+  const showManage = tab === 'data';
+  const showSettings = tab === 'settings';
+  const showOneRmCalc = tab === 'tools';
+  const showUnitConverter = tab === 'tools';
+  // filtro "recentezza" nella sezione Dati: null = nessun filtro (mostra tutti gli esercizi
   // indipendentemente da quando sono stati svolti l'ultima volta), altrimenti un numero di giorni
   // (mostra solo gli esercizi con almeno una sessione negli ultimi N giorni).
   const [manageRecencyDays, setManageRecencyDays] = useState(null);
-  const [showSettings, setShowSettings] = useState(false);
   const [showCompareAdd, setShowCompareAdd] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
-  // calcolatore 1RM libero e convertitore kg/lb: strumenti standalone, non legati al dataset caricato.
-  const [showOneRmCalc, setShowOneRmCalc] = useState(false);
-  const [showUnitConverter, setShowUnitConverter] = useState(false);
+  function goTab(next) {
+    setTab(next);
+    try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) { /* ambienti senza scroll */ }
+  }
   // app di provenienza per l'aggiornamento export: fissa (nessun selettore visibile all'utente)
   const [updateImportApp] = useState('liftoff');
   const [updateMappingState, setUpdateMappingState] = useState(null); // { headers, rows } quando serve mappatura manuale
 
-  function closeAllPanels() {
-    setShowManage(false); setShowSettings(false);
-    setShowOneRmCalc(false); setShowUnitConverter(false);
-  }
 
   // conteggio occorrenze per esercizio sul dataset grezzo corrente
   const exerciseCounts = useMemo(() => {
@@ -1868,7 +1876,7 @@ function WorkoutBodyExplorer({ initialRaw, onDataChange, onClearData, langApp, l
       color: 'var(--text-primary)',
       fontFamily: '"Inter", system-ui, sans-serif',
       paddingTop: 'max(16px, env(safe-area-inset-top))',
-      paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+      paddingBottom: 'calc(110px + env(safe-area-inset-bottom))',
       paddingLeft: 'max(12px, env(safe-area-inset-left))',
       paddingRight: 'max(12px, env(safe-area-inset-right))',
     }}>
@@ -1910,72 +1918,17 @@ function WorkoutBodyExplorer({ initialRaw, onDataChange, onClearData, langApp, l
         }
       `}</style>
 
-      {/* rotellina impostazioni: fissa in alto a destra, sopra a tutto il resto (z-index alto),
-          così resta sempre raggiungibile indipendentemente da scroll o pannelli aperti. */}
-      <button onClick={() => { const v = !showSettings; closeAllPanels(); setShowSettings(v); }} aria-label={t(langApp, 'settings')} style={{
-        position: 'fixed',
-        top: 'max(14px, env(safe-area-inset-top))', right: 'max(14px, env(safe-area-inset-right))',
-        zIndex: 1000,
-        width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 20,
-        background: showSettings ? '#5ADECD' : 'var(--bg-card)',
-        border: '1px solid var(--border-strong)', color: showSettings ? 'var(--on-accent)' : 'var(--text-primary-dim)',
-        fontSize: 17, cursor: 'pointer', flexShrink: 0, boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
-        transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease',
-      }}>
-        &#9881;
-      </button>
-
       <div className="wbe-container" style={{ width: '100%', maxWidth: 480, margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32 }}>
+        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 2px 22px' }}>
           <PhyzxLogo size={20} />
-        </div>
-
-        {/* Barra azioni: griglia a 4 colonne uguali così i 4 tasti restano sempre su un'unica riga
-            anche sugli schermi più stretti (iPhone SE incluso), invece di andare a capo come con
-            un flex-wrap pensato più per desktop. Il testo dentro ogni tasto può andare su due righe
-            se serve, ma la riga di tasti nel suo insieme resta sempre una sola. */}
-        <div className="wbe-actionbar" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 14 }}>
-          <label style={{
-            textAlign: 'center', padding: '8px 4px', borderRadius: 10, minHeight: 44,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'var(--bg-card)', border: '1px solid var(--border-strong)', color: 'var(--text-primary-dim)',
-            fontSize: 10.5, lineHeight: 1.15, fontFamily: '"Inter", sans-serif', cursor: 'pointer', fontWeight: 500,
-            transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease',
+          <span style={{
+            fontFamily: '"JetBrains Mono", ui-monospace, monospace', fontSize: 10.5, letterSpacing: '0.14em',
+            textTransform: 'uppercase', color: 'var(--text-secondary)',
+            padding: '5px 10px', borderRadius: 999, border: '1px solid var(--border)', background: 'var(--bg-card)',
           }}>
-            <span>&#8593; {t(langApp, 'updateExport')}</span>
-            <input type="file" accept=".csv" onChange={handleFileUpload} />
-          </label>
-          <button onClick={() => { const v = !showManage; closeAllPanels(); setShowManage(v); }} style={{
-            padding: '8px 4px', borderRadius: 10, minHeight: 44,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: showManage ? '#5ADECD' : 'var(--bg-card)',
-            border: '1px solid var(--border-strong)', color: showManage ? 'var(--on-accent)' : 'var(--text-primary-dim)',
-            fontSize: 10.5, lineHeight: 1.15, fontFamily: '"Inter", sans-serif', cursor: 'pointer', fontWeight: 500,
-            transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease',
-          }}>
-            {t(langApp, 'manage')}
-          </button>
-          <button onClick={() => { const v = !showOneRmCalc; closeAllPanels(); setShowOneRmCalc(v); }} style={{
-            padding: '8px 4px', borderRadius: 10, minHeight: 44,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: showOneRmCalc ? '#5ADECD' : 'var(--bg-card)',
-            border: '1px solid var(--border-strong)', color: showOneRmCalc ? 'var(--on-accent)' : 'var(--text-primary-dim)',
-            fontSize: 10.5, lineHeight: 1.15, fontFamily: '"Inter", sans-serif', cursor: 'pointer', fontWeight: 500,
-            transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease',
-          }}>
-            {t(langApp, 'oneRmCalc')}
-          </button>
-          <button onClick={() => { const v = !showUnitConverter; closeAllPanels(); setShowUnitConverter(v); }} style={{
-            padding: '8px 4px', borderRadius: 10, minHeight: 44,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: showUnitConverter ? '#5ADECD' : 'var(--bg-card)',
-            border: '1px solid var(--border-strong)', color: showUnitConverter ? 'var(--on-accent)' : 'var(--text-primary-dim)',
-            fontSize: 10.5, lineHeight: 1.15, fontFamily: '"Inter", sans-serif', cursor: 'pointer', fontWeight: 500,
-            transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease',
-          }}>
-            {t(langApp, 'unitConverter')}
-          </button>
-        </div>
+            {tab === 'analysis' ? t(langApp, 'tabAnalysis') : tab === 'tools' ? t(langApp, 'tabTools') : tab === 'data' ? t(langApp, 'tabData') : t(langApp, 'settings')}
+          </span>
+        </header>
 
         {updateMappingState && (
           <ImportMappingModal
@@ -1988,11 +1941,30 @@ function WorkoutBodyExplorer({ initialRaw, onDataChange, onClearData, langApp, l
         )}
 
         {showOneRmCalc && (
-          <div key="onerm-panel" className="panel-anim"><OneRmCalculator langApp={langApp} defaultUnit={weightUnit} /></div>
+          <div key="onerm-panel" className="panel-anim" style={{ marginBottom: 14 }}><OneRmCalculator langApp={langApp} defaultUnit={weightUnit} /></div>
         )}
 
         {showUnitConverter && (
           <div key="unitconverter-panel" className="panel-anim"><UnitConverterPanel langApp={langApp} defaultUnit={weightUnit} /></div>
+        )}
+
+        {showManage && (
+          <label className="panel-anim" style={{
+            display: 'flex', alignItems: 'center', gap: 14, padding: '16px 16px', borderRadius: 18, marginBottom: 14,
+            background: 'var(--bg-card)', border: '1px dashed var(--border-strong)', cursor: 'pointer',
+          }}>
+            <span style={{
+              width: 42, height: 42, borderRadius: 14, flexShrink: 0, display: 'grid', placeItems: 'center',
+              background: 'rgba(90,222,205,0.12)', border: '1px solid rgba(90,222,205,0.35)', color: 'var(--accent)',
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>
+            </span>
+            <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)' }}>{t(langApp, 'updateExport')}</span>
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>CSV</span>
+            </span>
+            <input type="file" accept=".csv" onChange={handleFileUpload} />
+          </label>
         )}
 
         {uploadMsg && (
@@ -2166,6 +2138,8 @@ function WorkoutBodyExplorer({ initialRaw, onDataChange, onClearData, langApp, l
           </div>
         )}
 
+        {tab === 'analysis' && (
+          <>
         <div style={{ color: 'var(--text-secondary)', fontSize: 12, marginBottom: 14 }}>
           {t(langApp, 'tapMuscleGroup')}
         </div>
@@ -2199,9 +2173,18 @@ function WorkoutBodyExplorer({ initialRaw, onDataChange, onClearData, langApp, l
             <h2 style={{ fontFamily:'"Space Grotesk", sans-serif', fontSize: 20, fontWeight: 600, margin: 0, color: GROUP_COLOR[selected] }}>
               {translateGroup(selected, langApp)}
             </h2>
-            <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
-              {groupStats.sessions} {t(langApp, 'sessions')} &middot; {groupStats.totalSets} {t(langApp, 'sets')} &middot; {fmtWeight(groupStats.totalVolume, weightUnit)} {weightUnitLabel(weightUnit)} {t(langApp, 'totalVolume')}
-            </span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 12 }}>
+              {[
+                { v: groupStats.sessions, l: t(langApp, 'sessions') },
+                { v: groupStats.totalSets, l: t(langApp, 'sets') },
+                { v: exercisesInGroup.length, l: langApp === 'en' ? 'exercises' : 'esercizi' },
+              ].map(x => (
+                <div key={x.l} style={{ padding: '10px 12px', borderRadius: 16, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                  <div style={{ fontFamily: '"JetBrains Mono", ui-monospace, monospace', fontSize: 20, fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.1 }}>{x.v}</div>
+                  <div style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginTop: 4 }}>{x.l}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '14px 0' }}>
@@ -2354,7 +2337,44 @@ function WorkoutBodyExplorer({ initialRaw, onDataChange, onClearData, langApp, l
             </>
           )}
         </div>
+          </>
+        )}
       </div>
+
+      {/* barra di navigazione inferiore: vetro flottante, sempre raggiungibile col pollice */}
+      <nav aria-label="Navigazione" style={{
+        position: 'fixed', left: 0, right: 0, bottom: 'max(12px, env(safe-area-inset-bottom))', zIndex: 900,
+        display: 'flex', justifyContent: 'center', padding: '0 max(14px, env(safe-area-inset-left))', pointerEvents: 'none',
+      }}>
+        <div className="phyzx-nav" style={{
+          pointerEvents: 'auto', width: '100%', maxWidth: 440, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4,
+          padding: 6, borderRadius: 24, background: 'rgba(12,16,26,0.72)', border: '1px solid var(--border-strong)',
+          WebkitBackdropFilter: 'blur(24px) saturate(160%)', backdropFilter: 'blur(24px) saturate(160%)',
+          boxShadow: '0 1px 0 rgba(255,255,255,0.07) inset, 0 18px 50px rgba(0,0,0,0.55)',
+        }}>
+          {[
+            { key: 'analysis', label: t(langApp, 'tabAnalysis'), icon: <><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></> },
+            { key: 'tools', label: t(langApp, 'tabTools'), icon: <><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M8.5 7.5h7M8.5 12h2M13.5 12h2M8.5 16h2M13.5 16h2"/></> },
+            { key: 'data', label: t(langApp, 'tabData'), icon: <><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></> },
+            { key: 'settings', label: t(langApp, 'settings'), icon: <><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></> },
+          ].map(item => {
+            const active = tab === item.key;
+            return (
+              <button key={item.key} onClick={() => goTab(item.key)} aria-current={active ? 'page' : undefined} className="phyzx-tab"
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '9px 2px 8px', borderRadius: 18,
+                  border: 'none', cursor: 'pointer', fontFamily: '"Inter", sans-serif', fontSize: 10, fontWeight: 600, letterSpacing: '0.02em',
+                  background: active ? 'rgba(90,222,205,0.12)' : 'transparent',
+                  color: active ? 'var(--accent)' : 'var(--text-secondary)',
+                  boxShadow: active ? '0 0 0 1px rgba(90,222,205,0.28) inset, 0 6px 20px rgba(90,222,205,0.12)' : 'none',
+                }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{item.icon}</svg>
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

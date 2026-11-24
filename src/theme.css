@@ -70,7 +70,7 @@ label[style*="var(--bg-card)"] {
 }
 
 /* Campi di input: incavati, con focus acceso */
-input:not([type="file"]):not([type="checkbox"]):not([type="radio"]), select, textarea {
+input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea {
   background: rgba(255, 255, 255, 0.04) !important;
   border-color: var(--border-strong) !important;
   color: var(--text-primary);
@@ -133,3 +133,13 @@ input, select, textarea, td, th { font-variant-numeric: tabular-nums; }
   .panel-anim { animation: none !important; }
   button { transition: none; }
 }
+
+/* ── Navigazione inferiore ─────────────────────────────────────────────── */
+.phyzx-tab { transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.12s ease; }
+.phyzx-tab:active { transform: scale(0.94); }
+.phyzx-nav [style*="background: rgb(90, 222, 205)"] { box-shadow: none !important; }
+/* la barra è già vetro: niente doppio blur/ombra dall'attributo generico */
+.phyzx-nav { -webkit-backdrop-filter: blur(24px) saturate(160%) !important; backdrop-filter: blur(24px) saturate(160%) !important; }
+
+/* Slider */
+input[type="range"] { accent-color: var(--accent); height: 28px; background: transparent; }

@@ -113,7 +113,7 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
   }));
 
   return (
-    <div className="chart-glow" style={{ width: '100%', height: 270, marginLeft: -10, '--glow': `${series[0].color}99` }}>
+    <div className="chart-glow" style={{ width: '100%', height: 220, marginLeft: -10, '--glow': `${series[0].color}99` }}>
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>
@@ -198,7 +198,7 @@ function ExercisePicker({ list, query, setQuery, selected, colorOf, toggle, favs
       <div className="sheet">
         <div className="sheet-grab" />
         <div className="row between" style={{ marginBottom: 12 }}>
-          <h2 className="sheet-title">{t('exercisesTitle')}</h2>
+          <div><h2 className="sheet-title">{t('exercisesTitle')}</h2><div className="muted" style={{ fontSize: 12, marginTop: 2 }}>{t('max4')}</div></div>
           <button className="pill sheet-done" onClick={onClose}>{t('done')}</button>
         </div>
         <div className="search" style={{ marginBottom: 6 }}>
@@ -264,19 +264,16 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
 
   return (
     <div className="screen">
-      <div className="row between" style={{ alignItems: 'flex-end' }}>
-        <div>
-          <Label>{t('est1rm')} · {unitsFor(selected, unit)(selected[0] || '')}</Label>
-          <h1 className="h1">{t('progress')}</h1>
-        </div>
+      <div className="row between">
+        <h1 className="h1">{t('progress')}</h1>
         <label className={`import-btn ${importing ? 'off' : ''}`} aria-label={t('importTitle')}>
-          <Icon name="upload" size={18} stroke={2.2} />{importing ? t('importing') : t('importShort')}
+          <Icon name="upload" size={16} stroke={2.4} />{importing ? t('importing') : t('importShort')}
           <input type="file" accept=".csv,text/csv" disabled={importing} onChange={e => { const f = e.target.files[0]; e.target.value = ''; if (f) onFile(f); }} />
         </label>
       </div>
       {msg && <div className={`msg ${msg.ok ? 'ok' : 'err'}`}>{msg.text}</div>}
 
-      <div style={{ display: 'grid', gap: 10 }}>
+      <div style={{ display: 'grid', gap: 8 }}>
         <button className="search search-btn" onClick={() => setPicker(true)} aria-haspopup="dialog">
           <Icon name="search" size={18} />
           <span className="field">{t('search')}</span>
@@ -294,7 +291,6 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
             );
           })}
         </div>
-        <div className="label" style={{ fontSize: 12 }}>{t('max4')}</div>
       </div>
 
       {picker && (
@@ -307,14 +303,14 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
           value={heroSum.bw ? <CountUp to={Math.round(heroSum.last.e1rm)} /> : <CountUp to={wv(heroSum.last.e1rm, heroU)} decimals={1} />} unit={heroSum.bw ? t('reps') : heroU}
           pills={<><DeltaPill v={heroSum.delta30} label="30 gg" /><DeltaPill v={heroSum.delta90} label="90 gg" /></>}
           foot={<><span>Record {heroSum.bw ? `${Math.round(heroSum.best.e1rm)} ${t('reps')}` : wu(heroSum.best.e1rm, heroU)}</span><span>{heroSum.sessions} sessioni</span></>}>
-          <Sparkline values={model.history[primary].slice(-30).map(s => s.e1rm)} color="#FFFFFF" height={70} />
+          <Sparkline values={model.history[primary].slice(-30).map(s => s.e1rm)} color="#FFFFFF" height={54} />
         </Hero>
       )}
 
       {selected.length > 0 && (
         <Card>
           <div className="row between" style={{ marginBottom: 12 }}>
-            <span className="row" style={{ gap: 10 }}><span className="ichip" style={{ '--c': '#2F8CFF' }}><Icon name="trend" size={16} stroke={2} /></span><span className="ct">{t('trend')}</span></span>
+            <span className="ct">{t('trend')}</span>
             <Segmented small value={range} onChange={setRange} options={[
               { value: '1m', label: t('range1m') }, { value: '3m', label: t('range3m') }, { value: '6m', label: t('range6m') },
               { value: '1y', label: t('range1y') }, { value: 'all', label: t('rangeAll') },
@@ -334,7 +330,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
         </Card>
       )}
 
-      {selected.map(n => <SummaryCard key={n} name={n} color={colorOf(n)} model={model} lang={lang} exLang={exLang} unit={unit} t={t} />)}
+      {selected.slice(1).map(n => <SummaryCard key={n} name={n} color={colorOf(n)} model={model} lang={lang} exLang={exLang} unit={unit} t={t} />)}
 
       {primary && (
         <Card>

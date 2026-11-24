@@ -158,12 +158,9 @@ export default function Recent({ model, lang, exLang, unit }) {
 
   return (
     <div className="screen">
-      <div>
-        <Label>{t('last30')}</Label>
-        <h1 className="h1">{t('navRecent')}</h1>
-      </div>
+      <h1 className="h1">{t('navRecent')}</h1>
 
-      <Hero tone="green" eyebrow="Allenamenti" tag={`${streak} sett. di fila`} value={<CountUp to={last30.length} />}
+      <Hero tone="green" eyebrow="Allenamenti · ultimi 30 giorni" tag={`${streak} sett. di fila`} value={<CountUp to={last30.length} />}
         pills={<span className="dpill">{num(avg, 1)} a settimana · 12 sett.</span>}
         foot={<><span>{last30.reduce((s, w) => s + w.totalSets, 0)} serie</span><span>{last30.reduce((s, w) => s + w.prCount, 0)} record</span></>} />
 

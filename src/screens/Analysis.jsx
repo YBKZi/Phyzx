@@ -71,10 +71,7 @@ export default function Analysis({ model, unit }) {
 
   return (
     <div className="screen">
-      <div>
-        <Label>Tutto lo storico · {o.workouts} allenamenti · {o.sets} serie</Label>
-        <h1 className="h1">Analisi</h1>
-      </div>
+      <h1 className="h1">Analisi</h1>
 
       <Hero tone="violet" eyebrow="Allenamenti totali" tag={`da ${fmtSpan(o.spanDays)}`} value={<CountUp to={o.workouts} />}
         pills={<><span className="dpill">{num(o.perWeek, 1)} a settimana</span><span className="dpill">{a.records.total} record</span></>}

@@ -147,6 +147,30 @@ export function Icon({ name, size = 22, stroke = 1.7 }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{P[name]}</svg>;
 }
 
+// Icone della barra in basso: contorno da inattive, riempite da attive
+export function DockIcon({ name, active, size = 24 }) {
+  const f = active ? 'currentColor' : 'none';
+  const sw = active ? 2.1 : 1.8;
+  const shapes = {
+    progress: <>
+      <path d="M3.5 17.5 9 11.5l3.8 3L20.5 6.5V20h-17z" fill={f} fillOpacity={active ? 0.22 : 0} stroke="none" />
+      <path d="M3.5 17.5 9 11.5l3.8 3 7.7-8" />
+      <path d="M3.5 20.5h17" opacity={active ? 1 : 0.55} />
+    </>,
+    recent: <>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="4" fill={f} fillOpacity={active ? 0.22 : 0} />
+      <path d="M8 3v3.6M16 3v3.6M3.5 10.5h17" />
+      <circle cx="8.5" cy="14.8" r="1" fill="currentColor" stroke="none" /><circle cx="12" cy="14.8" r="1" fill="currentColor" stroke="none" /><circle cx="15.5" cy="14.8" r="1" fill="currentColor" stroke="none" />
+    </>,
+    analysis: <>
+      <rect x="4" y="11.5" width="4.4" height="8.5" rx="1.6" fill={f} stroke={active ? 'none' : 'currentColor'} />
+      <rect x="9.8" y="4" width="4.4" height="16" rx="1.6" fill={f} stroke={active ? 'none' : 'currentColor'} />
+      <rect x="15.6" y="8.5" width="4.4" height="11.5" rx="1.6" fill={f} stroke={active ? 'none' : 'currentColor'} />
+    </>,
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{shapes[name]}</svg>;
+}
+
 export function PRBadge({ label = 'PR' }) {
   return <span className="prbadge"><Icon name="trophy" size={11} stroke={2} />{label}</span>;
 }

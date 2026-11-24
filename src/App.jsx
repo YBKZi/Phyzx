@@ -4,7 +4,7 @@ import logo from './assets/phyzx-logo.png';
 import { WORKOUT_DATA_KEY, UNITS_KEY } from './lib/core.js';
 import { buildModel, liftoffRowsToRaw, mergeRows, normalizeRows, snapKg } from './lib/stats.js';
 import { makeT } from './lib/i18n.js';
-import { Icon, Label } from './ui/kit.jsx';
+import { Icon, DockIcon, Label } from './ui/kit.jsx';
 import Recent from './screens/Recent.jsx';
 import Analysis from './screens/Analysis.jsx';
 import Progress from './screens/Progress.jsx';
@@ -111,11 +111,12 @@ export default function App() {
         {tab === 'progress' && <Progress key="progress" {...props} />}
         {tab === 'analysis' && <Analysis key="analysis" {...props} />}
       </div>
-      <nav className="nav" aria-label="Navigazione">
-        <div className="nav-in">
+      <nav className="dock" aria-label="Navigazione">
+        <div className="dock-in">
           {items.map(i => (
-            <button key={i.key} className={tab === i.key ? 'on' : ''} aria-current={tab === i.key ? 'page' : undefined} onClick={() => go(i.key)}>
-              <Icon name={i.icon} size={22} />{i.label}
+            <button key={i.key} className={tab === i.key ? 'on' : ''} aria-label={i.label} aria-current={tab === i.key ? 'page' : undefined} onClick={() => go(i.key)}>
+              <DockIcon name={i.icon} active={tab === i.key} />
+              <span className="lbl"><span>{i.label}</span></span>
             </button>
           ))}
         </div>

@@ -133,6 +133,7 @@ const P = {
   last: <><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></>,
   recent: <><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M8 3v4M16 3v4M3.5 10h17" /></>,
   progress: <><path d="M3 3v18h18" /><path d="m7 15 4-5 3 3 5-7" /></>,
+  analysis: <><rect x="4" y="12" width="4" height="8" rx="1.2" /><rect x="10" y="4" width="4" height="16" rx="1.2" /><rect x="16" y="9" width="4" height="11" rx="1.2" /></>,
   more: <><circle cx="6" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="18" cy="12" r="1.6" /></>,
   upload: <><path d="M12 16V4M7 9l5-5 5 5M4 20h16" /></>,
   trophy: <><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a2 2 0 0 0 0 4h3M16 6h3a2 2 0 0 1 0 4h-3M12 13v4M8.5 20h7" /></>,

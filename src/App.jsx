@@ -6,6 +6,7 @@ import { buildModel, liftoffRowsToRaw, mergeRows, normalizeRows, snapKg } from '
 import { makeT } from './lib/i18n.js';
 import { Icon, Label } from './ui/kit.jsx';
 import Recent from './screens/Recent.jsx';
+import Analysis from './screens/Analysis.jsx';
 import Progress from './screens/Progress.jsx';
 
 const MIGRATION_KEY = 'phyzx-data-v2';
@@ -100,17 +101,15 @@ export default function App() {
   const items = [
     { key: 'progress', label: t('navProgress'), icon: 'progress' },
     { key: 'recent', label: t('navRecent'), icon: 'recent' },
+    { key: 'analysis', label: 'Analisi', icon: 'analysis' },
   ];
 
   return (
     <>
       <div className="app">
-        <div className="top">
-          <img src={logo} alt="Phyzx" />
-          <span className="pill mono" style={{ fontSize: 10.5 }}>{t('summary')(model.workouts.length, model.totalSets)}</span>
-        </div>
         {tab === 'recent' && <Recent key="recent" {...props} />}
         {tab === 'progress' && <Progress key="progress" {...props} />}
+        {tab === 'analysis' && <Analysis key="analysis" {...props} />}
       </div>
       <nav className="nav" aria-label="Navigazione">
         <div className="nav-in">

@@ -82,6 +82,9 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
   const span = hi - lo || hi * 0.1 || 1;
   const yDomain = data.length ? [Math.max(0, Math.floor(lo - span * 0.25)), Math.ceil(hi + span * 0.2)] : [0, 100];
   const single = series.length === 1;
+  // unità sull'asse: solo se tutte le serie con carico usano la stessa unità
+  const axisUnits = [...new Set(series.filter(s => !s.bw).map(s => unitLabelFor(s.name, unit)))];
+  const axisUnit = axisUnits.length === 1 && series.every(s => !s.bw) ? axisUnits[0] : '';
 
   if (!data.length) return <div className="muted" style={{ padding: '60px 0', textAlign: 'center' }}>{t('empty')}</div>;
 
@@ -130,7 +133,7 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
           })}
           <XAxis dataKey="ts" type="number" scale="time" domain={[d0, d1]} tickCount={range === 'all' || range === '1y' ? 4 : 5} minTickGap={34} tickFormatter={ts => (range === '1m' || range === '3m' ? dateDay(lang, new Date(ts).toISOString().slice(0, 10)) : range === '6m' ? dateMonthYear(lang, ts).split(' ')[0] : dateMonthYear(lang, ts))}
             axisLine={false} tickLine={false} tickMargin={8} allowDataOverflow />
-          <YAxis domain={yDomain} width={44} axisLine={false} tickLine={false} tickCount={5} allowDataOverflow />
+          <YAxis domain={yDomain} width={axisUnit ? 58 : 44} tickFormatter={v => (axisUnit ? `${v} ${axisUnit}` : v)} axisLine={false} tickLine={false} tickCount={5} allowDataOverflow />
           <Tooltip cursor={<Crosshair domain={yDomain} />} content={<ChartTip series={series} unit={unit} lang={lang} />} />
           {series.map(s => (
             <Area key={s.name} type="monotone" dataKey={s.name} stroke={strokes[s.name].stops.length ? `url(#${strokes[s.name].id})` : s.color} strokeWidth={2.2} fill={`url(#ar-${s.color.slice(1)})`}

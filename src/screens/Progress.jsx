@@ -3,7 +3,7 @@ import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveCo
 import { translateExercise, translateGroup, GROUP_COLOR, unitFor } from '../lib/core.js';
 import { exerciseSummary, trainingPeriods, todayStr, addDays } from '../lib/stats.js';
 import { topSetText, makeT, dateShort, dateDay, dateMonthYear, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
-import { Card, Label, Stat, Delta, DeltaPill, Hero, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
+import { Card, Label, Stat, Delta, DeltaPill, Hero, CardTitle, CountUp, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
 
 // Unità di ogni esercizio sul grafico: se se ne mescolano due, tutto in kg (libbre convertite)
 const unitsFor = (names, unit) => {
@@ -113,7 +113,7 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
   }));
 
   return (
-    <div style={{ width: '100%', height: 270, marginLeft: -10 }}>
+    <div className="chart-glow" style={{ width: '100%', height: 270, marginLeft: -10, '--glow': `${series[0].color}99` }}>
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>
@@ -143,8 +143,8 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
           <YAxis domain={yDomain} width={axisUnit ? 58 : 44} tickFormatter={v => (axisUnit ? `${v} ${axisUnit}` : v)} axisLine={false} tickLine={false} tickCount={5} allowDataOverflow />
           <Tooltip cursor={<Crosshair domain={yDomain} />} content={<ChartTip series={series} unit={unit} lang={lang} />} />
           {series.map(s => (
-            <Area key={s.name} type="monotone" dataKey={s.name} stroke={strokes[s.name].stops.length ? `url(#${strokes[s.name].id})` : s.color} strokeWidth={2.2} fill={`url(#ar-${s.color.slice(1)})`}
-              connectNulls isAnimationActive={false}
+            <Area key={s.name} type="monotone" dataKey={s.name} stroke={strokes[s.name].stops.length ? `url(#${strokes[s.name].id})` : s.color} strokeWidth={2.6} fill={`url(#ar-${s.color.slice(1)})`}
+              connectNulls isAnimationActive animationDuration={900} animationEasing="ease-out"
               dot={p => (p.payload[`${s.name}__pr`]
                 ? <circle key={`${s.name}-${p.index}`} cx={p.cx} cy={p.cy} r="4" fill="#FFC439" stroke="#000000" strokeWidth="1.5" />
                 : <circle key={`${s.name}-${p.index}`} cx={p.cx} cy={p.cy} r="2" fill={s.color} />)}
@@ -304,7 +304,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
 
       {primary && heroSum && (
         <Hero tone="blue" eyebrow={translateExercise(primary, exLang)} tag={`${translateGroup(model.groupOf[primary], lang)} · 1RM stimato`}
-          value={heroSum.bw ? Math.round(heroSum.last.e1rm) : num(wv(heroSum.last.e1rm, heroU), 1)} unit={heroSum.bw ? t('reps') : heroU}
+          value={heroSum.bw ? <CountUp to={Math.round(heroSum.last.e1rm)} /> : <CountUp to={wv(heroSum.last.e1rm, heroU)} decimals={1} />} unit={heroSum.bw ? t('reps') : heroU}
           pills={<><DeltaPill v={heroSum.delta30} label="30 gg" /><DeltaPill v={heroSum.delta90} label="90 gg" /></>}
           foot={<><span>Record {heroSum.bw ? `${Math.round(heroSum.best.e1rm)} ${t('reps')}` : wu(heroSum.best.e1rm, heroU)}</span><span>{heroSum.sessions} sessioni</span></>}>
           <Sparkline values={model.history[primary].slice(-30).map(s => s.e1rm)} color="#FFFFFF" height={70} />
@@ -314,7 +314,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
       {selected.length > 0 && (
         <Card>
           <div className="row between" style={{ marginBottom: 12 }}>
-            <Label>{t('trend')}</Label>
+            <span className="row" style={{ gap: 10 }}><span className="ichip" style={{ '--c': '#2F8CFF' }}><Icon name="trend" size={16} stroke={2} /></span><span className="ct">{t('trend')}</span></span>
             <Segmented small value={range} onChange={setRange} options={[
               { value: '1m', label: t('range1m') }, { value: '3m', label: t('range3m') }, { value: '6m', label: t('range6m') },
               { value: '1y', label: t('range1y') }, { value: 'all', label: t('rangeAll') },
@@ -338,7 +338,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
 
       {primary && (
         <Card>
-          <div className="card-title"><Label>{t('recentSessions')}</Label><span className="label" style={{ fontSize: 9 }}>{translateExercise(primary, exLang)}</span></div>
+          <CardTitle icon="clock" tone="#A78BFA" sub={translateExercise(primary, exLang)}>{t('recentSessions')}</CardTitle>
           <table className="table">
             <thead><tr><th>{t('date')}</th><th>{t('topSet')}</th><th>{t('est1rm')}</th></tr></thead>
             <tbody>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Papa from 'papaparse';
 import logo from './assets/phyzx-logo.png';
 import { WORKOUT_DATA_KEY, UNITS_KEY } from './lib/core.js';
@@ -78,7 +78,9 @@ export default function App() {
   const model = useMemo(() => buildModel(raw), [raw]);
 
   
-  const go = next => { setTab(next); setMsg(null); try { window.scrollTo(0, 0); } catch (e) { /* noop */ } };
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => { const f = () => setScrolled(window.scrollY > 90); f(); window.addEventListener('scroll', f, { passive: true }); return () => window.removeEventListener('scroll', f); }, []);
+  const go = next => { try { navigator.vibrate && navigator.vibrate(8); } catch (e) { /* noop */ } setTab(next); setMsg(null); try { window.scrollTo(0, 0); } catch (e) { /* noop */ } };
 
   async function onFile(file) {
     setImporting(true); setMsg(null);
@@ -106,6 +108,7 @@ export default function App() {
 
   return (
     <>
+      <div className={`topbar ${scrolled ? 'on' : ''}`} aria-hidden="true">{items.find(i => i.key === tab).label}</div>
       <div className="app">
         {tab === 'recent' && <Recent key="recent" {...props} />}
         {tab === 'progress' && <Progress key="progress" {...props} />}

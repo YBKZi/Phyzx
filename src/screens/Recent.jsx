@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { translateExercise, translateGroup, GROUP_COLOR } from '../lib/core.js';
 import { weeklyCounts, heatmap, weekStreak, groupSetsBetween, addDays, daysBetween, todayStr } from '../lib/stats.js';
 import { topSetText, makeT, dateDay, dateWeekday, relativeDay, num } from '../lib/i18n.js';
-import { Card, Label, Stat, Delta, Hero, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
+import { Card, Label, Stat, Delta, Hero, CardTitle, CountUp, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
 
 const gColor = g => (GROUP_COLOR[g] && !GROUP_COLOR[g].startsWith('var') ? GROUP_COLOR[g] : COLORS.flat);
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
@@ -163,22 +163,22 @@ export default function Recent({ model, lang, exLang, unit }) {
         <h1 className="h1">{t('navRecent')}</h1>
       </div>
 
-      <Hero tone="green" eyebrow="Allenamenti negli ultimi 30 giorni" tag={`${streak} ${streak === 1 ? 'settimana' : 'settimane'} di fila`} value={last30.length}
+      <Hero tone="green" eyebrow="Allenamenti" tag={`${streak} sett. di fila`} value={<CountUp to={last30.length} />}
         pills={<span className="dpill">{num(avg, 1)} a settimana · 12 sett.</span>}
         foot={<><span>{last30.reduce((s, w) => s + w.totalSets, 0)} serie</span><span>{last30.reduce((s, w) => s + w.prCount, 0)} record</span></>} />
 
       <Card>
-        <div className="card-title"><Label>{t('workoutsPerWeek')}</Label><span className="label" style={{ fontSize: 9 }}>{t('last12w')}</span></div>
+        <CardTitle icon="bars" tone="#2F8CFF" sub="12 sett.">{t('workoutsPerWeek')}</CardTitle>
         <WeeklyBars weeks={weeks} lang={lang} t={t} />
       </Card>
 
       <Card>
-        <div className="card-title"><Label>{t('consistency')}</Label><span className="label" style={{ fontSize: 9 }}>{t('last16w')}</span></div>
+        <CardTitle icon="flame" tone="#FF8C46" sub="16 sett.">{t('consistency')}</CardTitle>
         <Heatmap cols={cols} lang={lang} t={t} />
       </Card>
 
       <Card>
-        <div className="card-title"><Label>{t('balance')}</Label><span className="label" style={{ fontSize: 9 }}>{t('setsWord')} · 30g</span></div>
+        <CardTitle icon="scale" tone="#1FD17A" sub={`${t('setsWord')} · 30g`}>{t('balance')}</CardTitle>
         <Balance model={model} lang={lang} t={t} today={today} />
       </Card>
 

@@ -3,14 +3,14 @@ import { translateExercise, GROUP_COLOR } from '../lib/core.js';
 import { todayStr } from '../lib/stats.js';
 import { buildAnalysis } from '../lib/analytics.js';
 import { dateShort, dateDay, wu, num, pct } from '../lib/i18n.js';
-import { Card, Label, Stat, Delta, DeltaPill, Hero, PRBadge, Donut, COLORS } from '../ui/kit.jsx';
+import { Card, Label, Stat, Delta, DeltaPill, Hero, CardTitle, Ring, CountUp, PRBadge, Donut, COLORS } from '../ui/kit.jsx';
 
 const gColor = g => GROUP_COLOR[g] || COLORS.flat;
 const MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 const DAYS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
-function Title({ children, sub }) {
-  return <div className="card-title"><Label>{children}</Label>{sub ? <span className="label" style={{ fontSize: 12 }}>{sub}</span> : null}</div>;
+function Title({ children, sub, icon, tone }) {
+  return <CardTitle icon={icon} tone={tone} sub={sub}>{children}</CardTitle>;
 }
 
 function HBar({ label, value, frac, color = COLORS.accent, dot, mark }) {
@@ -76,7 +76,7 @@ export default function Analysis({ model, unit }) {
         <h1 className="h1">Analisi</h1>
       </div>
 
-      <Hero tone="violet" eyebrow="Allenamenti totali" tag={`da ${fmtSpan(o.spanDays)}`} value={o.workouts}
+      <Hero tone="violet" eyebrow="Allenamenti totali" tag={`da ${fmtSpan(o.spanDays)}`} value={<CountUp to={o.workouts} />}
         pills={<><span className="dpill">{num(o.perWeek, 1)} a settimana</span><span className="dpill">{a.records.total} record</span></>}
         foot={<><span>{o.sets} serie</span><span>{o.exercises} esercizi diversi</span></>} />
 
@@ -86,17 +86,24 @@ export default function Analysis({ model, unit }) {
       </div>
 
       <Card>
-        <Title sub="ultimi 12 mesi">Allenamenti al mese</Title>
+        <Title icon="bars" tone="#2F8CFF" sub="ultimi 12 mesi">Allenamenti al mese</Title>
         <Columns highlightLast items={a.months.map(m => ({ key: m.key, label: MONTHS[m.month], value: m.workouts }))} />
       </Card>
 
       <Card>
-        <Title>Costanza</Title>
+        <Title icon="flame" tone="#FF8C46">Costanza</Title>
+        <div className="row" style={{ gap: 18, marginBottom: 14 }}>
+          <Ring value={c.activeWeeksPct} size={108} thickness={12} color={c.activeWeeksPct >= 0.8 ? COLORS.up : COLORS.warn}>
+            <div><div className="mono" style={{ fontSize: 24, letterSpacing: '-0.03em' }}><CountUp to={Math.round(c.activeWeeksPct * 100)} />%</div><div className="label" style={{ fontSize: 11 }}>attive</div></div>
+          </Ring>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>{c.activeWeeks} settimane su {c.totalWeeks} con almeno un allenamento</div>
+            <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>{Math.round(c.stopShare * 100)}% del tempo in pausa · {c.stopsCount} {c.stopsCount === 1 ? 'pausa lunga' : 'pause lunghe'}</div>
+          </div>
+        </div>
         <div className="grid2" style={{ gap: 8, marginBottom: 6 }}>
-          <Stat value={`${Math.round(c.activeWeeksPct * 100)}%`} label="Settimane attive" sub={`${c.activeWeeks} su ${c.totalWeeks}`} accent={c.activeWeeksPct >= 0.8 ? COLORS.up : undefined} />
           <Stat value={c.bestStreak} label="Record settimane di fila" />
           <Stat value={c.bestWeek ? c.bestWeek.n : '–'} label="Settimana migliore" sub={c.bestWeek ? `dal ${dateDay('it', c.bestWeek.start)}` : ''} />
-          <Stat value={`${Math.round(c.stopShare * 100)}%`} label="Tempo in pausa" sub={`${c.stopsCount} ${c.stopsCount === 1 ? "pausa lunga" : "pause lunghe"}`} />
         </div>
         <div className="hr" />
         <div className="legend" style={{ gap: '8px 18px' }}>
@@ -109,12 +116,12 @@ export default function Analysis({ model, unit }) {
       </Card>
 
       <Card>
-        <Title sub="quando ti alleni">Giorni della settimana</Title>
+        <Title icon="recent" tone="#A78BFA" sub="quando ti alleni">Giorni della settimana</Title>
         <Columns items={a.weekdays.map((n, i) => ({ key: i, label: DAYS[i], value: n }))} />
       </Card>
 
       <Card>
-        <Title sub="ultimi 90 giorni">Gruppi muscolari</Title>
+        <Title icon="dumbbell" tone="#5CC8FF" sub="ultimi 90 giorni">Gruppi muscolari</Title>
         <div className="row" style={{ gap: 18, marginBottom: 16 }}>
           <Donut size={116} thickness={13} segments={a.groups.filter(g => g.sets90 > 0).map(g => ({ value: g.sets90, color: gColor(g.group) }))}>
             <div><div className="mono" style={{ fontSize: 20 }}>{total90}</div><div className="label" style={{ fontSize: 11 }}>serie</div></div>
@@ -130,7 +137,7 @@ export default function Analysis({ model, unit }) {
       </Card>
 
       <Card>
-        <Title sub="serie · 90 giorni">Spinta, trazione, gambe</Title>
+        <Title icon="scale" tone="#1FD17A" sub="serie · 90 giorni">Spinta, trazione, gambe</Title>
         <div style={{ display: 'flex', height: 12, borderRadius: 6, overflow: 'hidden', gap: 3, marginBottom: 12 }}>
           <div style={{ flex: b.push / bTot || 0.001, background: '#2F8CFF' }} /><div style={{ flex: b.pull / bTot || 0.001, background: '#FFC439' }} /><div style={{ flex: b.legs / bTot || 0.001, background: '#1FD17A' }} />
         </div>
@@ -143,7 +150,7 @@ export default function Analysis({ model, unit }) {
       </Card>
 
       <Card>
-        <Title sub="serie con carico">Range di ripetizioni</Title>
+        <Title icon="pulse" tone="#A78BFA" sub="serie con carico">Range di ripetizioni</Title>
         <div style={{ display: 'grid', gap: 13 }}>
           {a.reps.map(r => <HBar key={r.k} label={`${r.k} rip.`} frac={r.share} value={`${Math.round(r.share * 100)}%`} color="#A78BFA" />)}
         </div>
@@ -155,19 +162,19 @@ export default function Analysis({ model, unit }) {
       </div>
 
       <Card>
-        <Title sub="ultimi 12 mesi">Record per mese</Title>
+        <Title icon="trophy" tone="#FFC439" sub="ultimi 12 mesi">Record per mese</Title>
         <Columns highlightLast items={a.records.months.map(m => ({ key: m.key, label: MONTHS[m.month], value: m.workouts }))} />
       </Card>
 
       <Card>
-        <Title>Ultimi record</Title>
+        <Title icon="trophy" tone="#FFC439">Ultimi record</Title>
         {a.records.latest.map(p => (
           <Row key={`${p.name}${p.date}`} left={ex(p.name)} sub={dateShort('it', p.date)} right={<span className="row" style={{ gap: 8 }}><span className="mono" style={{ fontSize: 13 }}>{p.bw ? `${p.topReps} rip.` : wu(p.e1rm, unit, p.name)}</span><PRBadge label="PR" /></span>} />
         ))}
       </Card>
 
       <Card>
-        <Title sub={`1RM · ${a.movers.win} giorni`}>Chi sta migliorando</Title>
+        <Title icon="trend" tone="#1FD17A" sub={`1RM · ${a.movers.win} giorni`}>Chi sta migliorando</Title>
         {a.movers.avg != null && <div className="sub" style={{ margin: '-6px 0 8px' }}>Variazione media: <b style={{ color: a.movers.avg >= 0 ? COLORS.up : COLORS.down }}>{pct(a.movers.avg, 1)}</b> su {a.movers.count} esercizi.</div>}
         {a.movers.top.map(m => <Row key={m.name} left={ex(m.name)} sub={`${wu(m.base.e1rm, unit, m.name)} → ${wu(m.last.e1rm, unit, m.name)}`} right={<Delta v={m.pct} digits={1} />} />)}
         {a.movers.bottom.length > 0 && <>
@@ -178,20 +185,20 @@ export default function Analysis({ model, unit }) {
 
       {a.stagnant.length > 0 && (
         <Card>
-          <Title sub="almeno 6 sessioni">Fermi da un po'</Title>
+          <Title icon="clock" tone="#FF8C46" sub="almeno 6 sessioni">Fermi da un po'</Title>
           {a.stagnant.map(s => <Row key={s.name} left={ex(s.name)} sub={`${s.sessions} sessioni`} right={<span className="mono" style={{ fontSize: 13 }}>{s.days} giorni senza record</span>} />)}
         </Card>
       )}
 
       <Card>
-        <Title sub="per numero di allenamenti">Esercizi più frequenti</Title>
+        <Title icon="bars" tone="#2F8CFF" sub="per numero di allenamenti">Esercizi più frequenti</Title>
         <div style={{ display: 'grid', gap: 13 }}>
           {a.frequent.map(e => <HBar key={e.name} dot={gColor(e.group)} color={gColor(e.group)} label={ex(e.name)} value={e.sessions} frac={e.sessions / a.frequent[0].sessions} />)}
         </div>
       </Card>
 
       <Card>
-        <Title sub="1RM stimato">Massimali</Title>
+        <Title icon="target" tone="#FF4F5E" sub="1RM stimato">Massimali</Title>
         {a.bests.map(e => <Row key={e.name} left={ex(e.name)} sub={dateShort('it', e.best.date)} right={<span className="mono" style={{ fontSize: 14 }}>{wu(e.best.e1rm, unit, e.name)}</span>} />)}
       </Card>
     </div>

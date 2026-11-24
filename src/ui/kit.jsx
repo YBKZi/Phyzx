@@ -1,5 +1,5 @@
 import React from 'react';
-import { pct } from '../lib/i18n.js';
+import { pct, num } from '../lib/i18n.js';
 
 export const COLORS = {
   accent: '#2F8CFF', up: '#1FD17A', down: '#FF4F5E', flat: '#8E8E93', warn: '#FFC439',
@@ -42,6 +42,7 @@ export function DeltaPill({ v, label, digits = 1 }) {
 export function Hero({ tone = 'blue', eyebrow, tag, value, unit, pills, children, foot }) {
   return (
     <div className={`hero ${tone}`}>
+      <div className="hero-grain" aria-hidden="true" />
       <div className="row between"><span className="hero-eyebrow">{eyebrow}</span>{tag ? <span className="hero-tag">{tag}</span> : null}</div>
       <div className="hero-num">{value}{unit ? <small>{unit}</small> : null}</div>
       {pills ? <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>{pills}</div> : null}
@@ -161,6 +162,14 @@ const P = {
   chevron: <><path d="m9 6 6 6-6 6" /></>,
   search: <><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4-4" /></>,
   x: <><path d="M6 6l12 12M18 6 6 18" /></>,
+  flame: <><path d="M12 3c.6 3.2-2.4 4.6-2.4 7.4 0 1.4 1 2.4 2.4 2.4s2.4-1 2.4-2.4c0-.7-.2-1.2-.5-1.7 2.4 1.2 4.6 3.5 4.6 6.6A6.5 6.5 0 0 1 12 21a6.5 6.5 0 0 1-6.5-6.5C5.5 10 9.5 8 12 3z" /></>,
+  target: <><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1" fill="currentColor" /></>,
+  pulse: <><path d="M3 12h4l2.5-6.5 4 13L16 12h5" /></>,
+  clock: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></>,
+  dumbbell: <><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9.5v5M20.5 9.5v5M6.5 12h11" /></>,
+  bars: <><path d="M6 20v-8M12 20V4M18 20v-12" /></>,
+  scale: <><path d="M12 4v16M7 20h10M5 7h14" /><path d="m5 7-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0z" /></>,
+  trend: <><path d="m3.5 17 5.5-6 4 3 7-8" /><path d="M15 6h5.5v5.5" /></>,
   star: <><path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9 6.7 19.7l1.1-5.9L3.5 9.7l5.9-.8z" /></>,
   check: <><path d="m5 12.5 4.5 4.5L19 7.5" /></>,
 };
@@ -190,6 +199,49 @@ export function DockIcon({ name, active, size = 24 }) {
     </>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{shapes[name]}</svg>;
+}
+
+// Titolo di card con icona colorata
+export function CardTitle({ icon, tone = '#2F8CFF', children, sub }) {
+  return (
+    <div className="card-title">
+      <div className="row" style={{ gap: 10 }}>
+        {icon && <span className="ichip" style={{ '--c': tone }}><Icon name={icon} size={16} stroke={2} /></span>}
+        <span className="ct">{children}</span>
+      </div>
+      {sub ? <span className="ct-sub">{sub}</span> : null}
+    </div>
+  );
+}
+
+// Anello di avanzamento animato
+export function Ring({ value, size = 104, thickness = 11, color = COLORS.up, children }) {
+  const r = (size - thickness) / 2, c = 2 * Math.PI * r;
+  const [v, setV] = React.useState(0);
+  React.useEffect(() => { const id = requestAnimationFrame(() => setV(Math.max(0, Math.min(1, value)))); return () => cancelAnimationFrame(id); }, [value]);
+  return (
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)', overflow: 'visible' }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={thickness} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={thickness} strokeLinecap="round"
+          strokeDasharray={`${c * v} ${c}`} style={{ transition: 'stroke-dasharray 1s cubic-bezier(.2,.8,.2,1)', filter: `drop-shadow(0 0 8px ${color}77)` }} />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', textAlign: 'center' }}>{children}</div>
+    </div>
+  );
+}
+
+// Numero che sale da zero al valore (rispetta "riduci animazioni")
+export function CountUp({ to, decimals = 0, ms = 900 }) {
+  const [v, setV] = React.useState(0);
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setV(to); return undefined; }
+    let raf; const t0 = performance.now();
+    const tick = now => { const p = Math.min(1, (now - t0) / ms); setV(to * (1 - Math.pow(1 - p, 3))); if (p < 1) raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [to, ms]);
+  return <>{num(v, decimals)}</>;
 }
 
 export function PRBadge({ label = 'PR' }) {

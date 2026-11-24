@@ -22,22 +22,22 @@ const UNITS_KEY = 'performance-log-units';
 // Palette (variabili CSS) unica dell'app: solo tema scuro, nessuna scelta per l'utente.
 const THEME_VARS = {
   dark: {
-    '--bg-app': '#1B1930',
-    '--bg-app-2': '#211F38',
-    '--bg-card': '#252341',
-    '--bg-card-active': '#2E2C4A',
-    '--border': '#3A3856',
-    '--border-strong': '#4A4870',
-    '--text-tertiary': '#6E6C8E',
-    '--text-secondary': '#9694B0',
-    '--text-primary-dim': '#D4D2E8',
-    '--text-primary': '#EDEBFF',
-    '--bg-success': '#1e2a1e',
-    '--border-success': '#3a4a3a',
-    '--bg-error': '#2a1e1e',
-    '--border-error': '#4a3a3a',
+    '--bg-app': '#05070B',
+    '--bg-app-2': '#0A0E16',
+    '--bg-card': 'rgba(255, 255, 255, 0.045)',
+    '--bg-card-active': 'rgba(255, 255, 255, 0.10)',
+    '--border': 'rgba(255, 255, 255, 0.08)',
+    '--border-strong': 'rgba(255, 255, 255, 0.16)',
+    '--text-tertiary': '#5B6579',
+    '--text-secondary': '#8B96A8',
+    '--text-primary-dim': '#C9D1DE',
+    '--text-primary': '#EEF2F8',
+    '--bg-success': 'rgba(90, 224, 168, 0.08)',
+    '--border-success': 'rgba(90, 224, 168, 0.28)',
+    '--bg-error': 'rgba(224, 138, 138, 0.08)',
+    '--border-error': 'rgba(224, 138, 138, 0.28)',
     // colore del testo/icone sopra lo sfondo turchese di brand (#5ADECD): resta uno scuro fisso.
-    '--on-accent': '#1B1930',
+    '--on-accent': '#04100E',
   },
 };
 const MIN_COUNT_KEY = 'performance-log-mincount';
@@ -656,7 +656,7 @@ function ImportMappingModal({ headers, onConfirm, onCancel, langApp, defaultWeig
         width: '100%', maxWidth: 380, maxHeight: '85vh', overflowY: 'auto', scrollBehavior: 'smooth',
         background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 14, padding: 16,
       }}>
-        <div style={{ fontFamily: '"Oswald", sans-serif', fontSize: 16, fontWeight: 600, marginBottom: 6, color: 'var(--text-primary)' }}>
+        <div style={{ fontFamily: '"Space Grotesk", sans-serif', fontSize: 16, fontWeight: 600, marginBottom: 6, color: 'var(--text-primary)' }}>
           {t(langApp, 'importMappingTitle')}
         </div>
         <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 14, lineHeight: 1.5 }}>
@@ -724,14 +724,14 @@ function BodyMap({ selected, onSelect, view, setView, availableGroups }) {
       <div style={{ display:'flex', gap:8, background:'var(--bg-app)', padding:4, borderRadius:8 }}>
         <button onClick={()=>setView('front')} style={{
           padding:'6px 16px', borderRadius:6, border:'none', cursor:'pointer',
-          fontFamily:'"Oswald", sans-serif', fontSize:12, letterSpacing:1, textTransform:'uppercase',
+          fontFamily:'"Space Grotesk", sans-serif', fontSize:12, letterSpacing:1, textTransform:'uppercase',
           background: view==='front' ? '#5ADECD' : 'transparent',
           color: view==='front' ? 'var(--on-accent)' : 'var(--text-secondary)',
           transition: 'background 0.15s ease, color 0.15s ease',
         }}>Fronte</button>
         <button onClick={()=>setView('back')} style={{
           padding:'6px 16px', borderRadius:6, border:'none', cursor:'pointer',
-          fontFamily:'"Oswald", sans-serif', fontSize:12, letterSpacing:1, textTransform:'uppercase',
+          fontFamily:'"Space Grotesk", sans-serif', fontSize:12, letterSpacing:1, textTransform:'uppercase',
           background: view==='back' ? '#5ADECD' : 'transparent',
           color: view==='back' ? 'var(--on-accent)' : 'var(--text-secondary)',
           transition: 'background 0.15s ease, color 0.15s ease',
@@ -1070,7 +1070,7 @@ function TradingStyleChart({ mergedChartData, compareExercises, colorForExercise
           fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: '"Inter", sans-serif',
           transition: 'background 0.15s ease, color 0.15s ease',
         }}>
-          📅 {t(langApp, 'calendarToggle')}
+          {t(langApp, 'calendarToggle')}
         </button>
         {viewYDomain && (
           <button onClick={() => setViewYDomain(null)} style={{
@@ -1124,7 +1124,7 @@ function TradingStyleChart({ mergedChartData, compareExercises, colorForExercise
                 setSelectedTs(prev => (prev === ts ? null : ts));
               }
             }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+            <CartesianGrid strokeDasharray="1 5" stroke="var(--border-strong)" strokeOpacity={0.7} vertical={false} />
             {/* bande verticali dei periodi di allenamento (attivo/stop), disegnate PRIMA delle linee
                 nell'albero JSX così restano visivamente dietro di esse. Solo i periodi che ricadono
                 (anche parzialmente) nel domain visibile vengono renderizzati, per non appesantire
@@ -1174,12 +1174,12 @@ function TradingStyleChart({ mergedChartData, compareExercises, colorForExercise
                 const valueLabel = hasLoad ? `${fmtWeight(v, weightUnit)} ${weightUnitLabel(weightUnit)}` : `${Math.round(v)} rip.`;
                 return [`${valueLabel}${detail ? ' ('+detail+')' : ''}`, translateExercise(name, langExercise)];
               }}
-              contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 11 }}
+              contentStyle={{ background: 'rgba(10, 14, 22, 0.82)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', border: '1px solid var(--border-strong)', borderRadius: 12, fontSize: 11, boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
               labelStyle={{ color: 'var(--text-secondary)' }}
               cursor={false}
             />
             {compareExercises.map(ex => (
-              <Line key={ex} type="monotone" dataKey={ex} stroke={colorForExercise(ex)} strokeWidth={2.5}
+              <Line key={ex} type="monotone" dataKey={ex} stroke={colorForExercise(ex)} strokeWidth={2}
                 dot={{ r: 2.5, fill: colorForExercise(ex), style: { cursor: 'pointer' } }} activeDot={{ r: 5 }} connectNulls={true}
                 isAnimationActive={false} />
             ))}
@@ -1408,7 +1408,7 @@ function OneRmCalculator({ langApp, defaultUnit }) {
             <div style={{ fontSize: 10.5, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
               {t(langApp, 'oneRmEstimated')}
             </div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: '#5ADECD', fontFamily: '"Oswald", sans-serif' }}>
+            <div style={{ fontSize: 26, fontWeight: 700, color: '#5ADECD', fontFamily: '"Space Grotesk", sans-serif' }}>
               {fmtKg(oneRm)} {unit}
             </div>
           </div>
@@ -1864,7 +1864,7 @@ function WorkoutBodyExplorer({ initialRaw, onDataChange, onClearData, langApp, l
   return (
     <div className="wbe-root" style={{
       minHeight: '100vh',
-      background: 'linear-gradient(180deg, var(--bg-app) 0%, var(--bg-app-2) 100%)',
+      background: 'transparent',
       color: 'var(--text-primary)',
       fontFamily: '"Inter", system-ui, sans-serif',
       paddingTop: 'max(16px, env(safe-area-inset-top))',
@@ -1873,7 +1873,7 @@ function WorkoutBodyExplorer({ initialRaw, onDataChange, onClearData, langApp, l
       paddingRight: 'max(12px, env(safe-area-inset-right))',
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
@@ -1926,7 +1926,7 @@ function WorkoutBodyExplorer({ initialRaw, onDataChange, onClearData, langApp, l
       </button>
 
       <div className="wbe-container" style={{ width: '100%', maxWidth: 480, margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32 }}>
           <PhyzxLogo size={20} />
         </div>
 
@@ -1963,7 +1963,7 @@ function WorkoutBodyExplorer({ initialRaw, onDataChange, onClearData, langApp, l
             fontSize: 10.5, lineHeight: 1.15, fontFamily: '"Inter", sans-serif', cursor: 'pointer', fontWeight: 500,
             transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease',
           }}>
-            💪 {t(langApp, 'oneRmCalc')}
+            {t(langApp, 'oneRmCalc')}
           </button>
           <button onClick={() => { const v = !showUnitConverter; closeAllPanels(); setShowUnitConverter(v); }} style={{
             padding: '8px 4px', borderRadius: 10, minHeight: 44,
@@ -1973,7 +1973,7 @@ function WorkoutBodyExplorer({ initialRaw, onDataChange, onClearData, langApp, l
             fontSize: 10.5, lineHeight: 1.15, fontFamily: '"Inter", sans-serif', cursor: 'pointer', fontWeight: 500,
             transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease',
           }}>
-            🔄 {t(langApp, 'unitConverter')}
+            {t(langApp, 'unitConverter')}
           </button>
         </div>
 
@@ -2196,7 +2196,7 @@ function WorkoutBodyExplorer({ initialRaw, onDataChange, onClearData, langApp, l
 
         <div>
           <div style={{ marginBottom: 4 }}>
-            <h2 style={{ fontFamily:'"Oswald", sans-serif', fontSize: 20, fontWeight: 600, margin: 0, color: GROUP_COLOR[selected] }}>
+            <h2 style={{ fontFamily:'"Space Grotesk", sans-serif', fontSize: 20, fontWeight: 600, margin: 0, color: GROUP_COLOR[selected] }}>
               {translateGroup(selected, langApp)}
             </h2>
             <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
@@ -2366,7 +2366,7 @@ function FirstUploadScreen({ onUpload, uploading, error, langApp }) {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(180deg, var(--bg-app) 0%, var(--bg-app-2) 100%)',
+      background: 'transparent',
       color: 'var(--text-primary)',
       fontFamily: '"Inter", system-ui, sans-serif',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -2380,7 +2380,7 @@ function FirstUploadScreen({ onUpload, uploading, error, langApp }) {
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
           <PhyzxLogo size={30} />
         </div>
-        <h1 style={{ fontFamily:'"Oswald", sans-serif', fontSize: 22, fontWeight: 600, marginBottom: 8 }}>
+        <h1 style={{ fontFamily:'"Space Grotesk", sans-serif', fontSize: 22, fontWeight: 600, marginBottom: 8 }}>
           {t(langApp, 'uploadTitle')}
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 24, lineHeight: 1.5 }}>
@@ -2390,7 +2390,7 @@ function FirstUploadScreen({ onUpload, uploading, error, langApp }) {
           display: 'block', padding: '14px 20px', borderRadius: 10,
           background: '#5ADECD', color: 'var(--bg-app)', fontWeight: 600, fontSize: 14,
           cursor: uploading ? 'default' : 'pointer', opacity: uploading ? 0.6 : 1,
-          fontFamily: '"Oswald", sans-serif', letterSpacing: 0.5, textTransform: 'uppercase',
+          fontFamily: '"Space Grotesk", sans-serif', letterSpacing: 0.5, textTransform: 'uppercase',
           transition: 'opacity 0.15s ease',
         }}>
           {uploading ? t(langApp, 'uploading') : t(langApp, 'chooseFile')}

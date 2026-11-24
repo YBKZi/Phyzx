@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#1B1930">
+<meta name="theme-color" content="#05070B">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <title>Phyzx</title>
 <style>
   /* Sfondo fissato su html/body: senza questo, il bianco (o nero) di default del browser
@@ -16,8 +16,10 @@
      viene impostato dallo script inline sotto, PRIMA che questo <style> venga applicato dal
      browser, leggendo il tema salvato in precedenza (dark di default per chi non ha ancora
      scelto), così non si vede mai un flash dello sfondo sbagliato al caricamento. */
+  html {
+    background: var(--bg-app, #05070B);
+  }
   html, body {
-    background: var(--bg-app, #1B1930);
     margin: 0;
     height: 100%;
     touch-action: manipulation; /* evita lo zoom da doppio-tap su mobile, senza bloccare lo scroll */
@@ -31,9 +33,9 @@
   // un flash dello sfondo di default del browser prima che React monti.
   (function () {
     var dark = {
-      '--bg-app': '#1B1930', '--bg-app-2': '#211F38', '--bg-card': '#252341', '--bg-card-active': '#2E2C4A',
-      '--border': '#3A3856', '--border-strong': '#4A4870', '--text-tertiary': '#6E6C8E',
-      '--text-secondary': '#9694B0', '--text-primary-dim': '#D4D2E8', '--text-primary': '#EDEBFF',
+      '--bg-app': '#05070B', '--bg-app-2': '#0A0E16', '--bg-card': 'rgba(255,255,255,0.045)', '--bg-card-active': 'rgba(255,255,255,0.10)',
+      '--border': 'rgba(255,255,255,0.08)', '--border-strong': 'rgba(255,255,255,0.16)', '--text-tertiary': '#5B6579',
+      '--text-secondary': '#8B96A8', '--text-primary-dim': '#C9D1DE', '--text-primary': '#EEF2F8',
     };
     try {
       for (var key in dark) document.documentElement.style.setProperty(key, dark[key]);

@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
+import './theme.css';
 
 // Error boundary di sicurezza: senza questo, un errore JS non gestito in un ramo qualsiasi
 // dell'albero (es. durante l'aggiornamento dati dopo un import CSV) fa sì che React smonti

@@ -135,10 +135,14 @@ input[type="file"] { display: none; }
 
 /* ── Navigazione (barra piatta, stile Trade Republic) ──────────────────── */
 .nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: rgba(0,0,0,.92); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
-.nav-in { max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); padding: 8px 8px 6px; }
+.nav-in { max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: repeat(2, 1fr); padding: 8px 8px 6px; }
 .nav button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 2px; font-size: 11px; font-weight: 600; color: var(--text-3); transition: color .2s, transform .12s; }
 .nav button:active { transform: scale(.92); }
 .nav button.on { color: #fff; }
+
+.import-btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 16px; border-radius: 999px; background: var(--blue); color: #fff; font-family: var(--display); font-weight: 700; font-size: 14px; cursor: pointer; flex-shrink: 0; transition: transform .12s, opacity .2s; }
+.import-btn:active { transform: scale(.96); }
+.import-btn.off { opacity: .55; }
 
 /* ── Selettore esercizi (bottom sheet) ─────────────────────────────────── */
 .search-btn { width: 100%; text-align: left; display: block; }

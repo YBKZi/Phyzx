@@ -7,7 +7,6 @@ import { makeT } from './lib/i18n.js';
 import { Icon, Label } from './ui/kit.jsx';
 import Recent from './screens/Recent.jsx';
 import Progress from './screens/Progress.jsx';
-import More from './screens/More.jsx';
 
 const MIGRATION_KEY = 'phyzx-data-v2';
 
@@ -69,7 +68,7 @@ export default function App() {
   const [raw, setRaw] = useState(loadRaw);
   const lang = 'it';
   const exLang = 'en';
-  const [unit, setUnitState] = useState(() => read(UNITS_KEY) || 'kg');
+  const [unit] = useState(() => read(UNITS_KEY) || 'kg');
   const [tab, setTab] = useState('progress');
   const [importing, setImporting] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -78,7 +77,6 @@ export default function App() {
   const model = useMemo(() => buildModel(raw), [raw]);
 
   
-  const setUnit = v => { setUnitState(v); write(UNITS_KEY, v); };
   const go = next => { setTab(next); setMsg(null); try { window.scrollTo(0, 0); } catch (e) { /* noop */ } };
 
   async function onFile(file) {
@@ -96,15 +94,12 @@ export default function App() {
     } finally { setImporting(false); }
   }
 
-  const clearAll = () => { try { localStorage.removeItem(WORKOUT_DATA_KEY); } catch (e) { /* noop */ } setRaw([]); setMsg(null); };
-
   if (!raw.length) return <FirstUpload onFile={onFile} importing={importing} msg={msg} t={t} />;
 
-  const props = { model, lang, exLang, unit };
+  const props = { model, lang, exLang, unit, onFile, importing, msg };
   const items = [
     { key: 'progress', label: t('navProgress'), icon: 'progress' },
     { key: 'recent', label: t('navRecent'), icon: 'recent' },
-    { key: 'more', label: t('navMore'), icon: 'more' },
   ];
 
   return (
@@ -116,7 +111,6 @@ export default function App() {
         </div>
         {tab === 'recent' && <Recent key="recent" {...props} />}
         {tab === 'progress' && <Progress key="progress" {...props} />}
-        {tab === 'more' && <More key="more" {...props} setUnit={setUnit} onFile={onFile} importing={importing} msg={msg} onClear={clearAll} />}
       </div>
       <nav className="nav" aria-label="Navigazione">
         <div className="nav-in">

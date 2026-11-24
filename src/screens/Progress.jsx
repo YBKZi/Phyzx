@@ -199,7 +199,7 @@ function ExercisePicker({ list, query, setQuery, selected, colorOf, toggle, favs
   );
 }
 
-export default function Progress({ model, lang, exLang, unit }) {
+export default function Progress({ model, lang, exLang, unit, onFile, importing, msg }) {
   const t = makeT(lang);
   const [selected, setSelected] = useState(() => (model.exerciseList[0] ? [model.exerciseList[0].name] : []));
   const [query, setQuery] = useState('');
@@ -231,10 +231,17 @@ export default function Progress({ model, lang, exLang, unit }) {
 
   return (
     <div className="screen">
-      <div>
-        <Label>{t('est1rm')} · {[...new Set(selected.map(n => unitLabelFor(n, unit)))].join(' / ')}</Label>
-        <h1 className="h1">{t('progress')}</h1>
+      <div className="row between" style={{ alignItems: 'flex-end' }}>
+        <div>
+          <Label>{t('est1rm')} · {[...new Set(selected.map(n => unitLabelFor(n, unit)))].join(' / ')}</Label>
+          <h1 className="h1">{t('progress')}</h1>
+        </div>
+        <label className={`import-btn ${importing ? 'off' : ''}`} aria-label={t('importTitle')}>
+          <Icon name="upload" size={18} stroke={2.2} />{importing ? t('importing') : t('importShort')}
+          <input type="file" accept=".csv,text/csv" disabled={importing} onChange={e => { const f = e.target.files[0]; e.target.value = ''; if (f) onFile(f); }} />
+        </label>
       </div>
+      {msg && <div className={`msg ${msg.ok ? 'ok' : 'err'}`}>{msg.text}</div>}
 
       <div style={{ display: 'grid', gap: 10 }}>
         <button className="search search-btn" onClick={() => setPicker(true)} aria-haspopup="dialog">

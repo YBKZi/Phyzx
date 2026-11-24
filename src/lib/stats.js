@@ -123,10 +123,11 @@ export function buildModel(rawIn) {
     };
   }).sort((a, b) => b.date.localeCompare(a.date));
 
-  const exerciseList = Object.keys(history).map(name => ({
-    name, group: groupOf[name], sessions: history[name].length,
-    last: history[name][history[name].length - 1].date,
-  })).sort((a, b) => b.sessions - a.sessions);
+  // Ordine: più frequente → più recente → svolto prima nell'ultimo giorno → alfabetico
+  const exerciseList = Object.keys(history).map(name => {
+    const last = history[name][history[name].length - 1].date;
+    return { name, group: groupOf[name], sessions: history[name].length, last, lastPos: order.get(last).indexOf(name) };
+  }).sort((a, b) => b.sessions - a.sessions || b.last.localeCompare(a.last) || a.lastPos - b.lastPos || a.name.localeCompare(b.name));
 
   return { raw, workouts, history, exerciseList, groupOf, totalSets: raw.length };
 }

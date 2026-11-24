@@ -139,6 +139,8 @@ const P = {
   chevron: <><path d="m9 6 6 6-6 6" /></>,
   search: <><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4-4" /></>,
   x: <><path d="M6 6l12 12M18 6 6 18" /></>,
+  star: <><path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9 6.7 19.7l1.1-5.9L3.5 9.7l5.9-.8z" /></>,
+  check: <><path d="m5 12.5 4.5 4.5L19 7.5" /></>,
 };
 export function Icon({ name, size = 22, stroke = 1.7 }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{P[name]}</svg>;

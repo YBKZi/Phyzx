@@ -140,6 +140,29 @@ input[type="file"] { display: none; }
 .nav button:active { transform: scale(.92); }
 .nav button.on { color: #fff; }
 
+/* ── Selettore esercizi (bottom sheet) ─────────────────────────────────── */
+.search-btn { width: 100%; text-align: left; display: block; }
+.search-btn .field { display: block; color: var(--text-3); font-weight: 500; cursor: pointer; }
+.sheet-wrap { position: fixed; inset: 0; z-index: 100; display: flex; align-items: flex-end; justify-content: center; }
+.sheet-back { position: absolute; inset: 0; background: rgba(0,0,0,.6); animation: fade .2s ease; }
+.sheet { position: relative; width: 100%; max-width: 480px; height: 86dvh; display: flex; flex-direction: column; background: var(--surface); border-radius: 28px 28px 0 0; padding: 8px 16px calc(12px + env(safe-area-inset-bottom)); animation: slide .28s cubic-bezier(.2,.8,.2,1); }
+.sheet-grab { width: 38px; height: 5px; border-radius: 3px; background: var(--surface-3); margin: 4px auto 14px; }
+.sheet-title { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.03em; font-family: var(--display); }
+.sheet-done { background: #fff; color: #000; font-weight: 700; font-family: var(--display); }
+.sheet-list { flex: 1; overflow-y: auto; margin: 0 -16px; padding: 4px 16px 0; overscroll-behavior: contain; }
+.ex-row { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid var(--line); }
+.ex-row:last-child { border-bottom: none; }
+.ex-row-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; padding: 13px 0; text-align: left; }
+.ex-check { width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--surface-3); display: grid; place-items: center; color: #000; }
+.ex-row-name { display: block; font-weight: 700; font-size: 16px; letter-spacing: -0.015em; font-family: var(--display); }
+.ex-row-sub { display: block; font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
+.star { width: 44px; height: 44px; flex-shrink: 0; display: grid; place-items: center; color: var(--text-3); border-radius: 50%; transition: color .15s, transform .12s; }
+.star:active { transform: scale(.88); }
+.star.on { color: var(--warn); }
+.star.on svg { fill: var(--warn); }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slide { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
 /* ── Grafici ───────────────────────────────────────────────────────────── */
 .recharts-cartesian-axis-tick-value { font-family: var(--mono); font-size: 10.5px; font-weight: 500; fill: var(--text-2); }
 .recharts-surface { overflow: visible; }

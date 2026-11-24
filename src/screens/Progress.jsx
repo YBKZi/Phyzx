@@ -151,10 +151,61 @@ function SummaryCard({ name, color, model, lang, exLang, unit, t }) {
   );
 }
 
+const FAV_KEY = 'phyzx-favorites';
+function loadFavs() { try { const v = JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+
+function ExercisePicker({ list, query, setQuery, selected, colorOf, toggle, favs, toggleFav, exLang, t, onClose }) {
+  React.useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = e => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
+  }, []);
+  return (
+    <div className="sheet-wrap" role="dialog" aria-modal="true" aria-label={t('exercisesTitle')}>
+      <div className="sheet-back" onClick={onClose} />
+      <div className="sheet">
+        <div className="sheet-grab" />
+        <div className="row between" style={{ marginBottom: 12 }}>
+          <h2 className="sheet-title">{t('exercisesTitle')}</h2>
+          <button className="pill sheet-done" onClick={onClose}>{t('done')}</button>
+        </div>
+        <div className="search" style={{ marginBottom: 6 }}>
+          <Icon name="search" size={18} />
+          <input className="field" autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder={t('search')} inputMode="search" />
+        </div>
+        <div className="sheet-list">
+          {list.length === 0 && <div className="muted" style={{ padding: '28px 0', textAlign: 'center' }}>{t('noMatch')}</div>}
+          {list.map(e => {
+            const on = selected.includes(e.name), fav = favs.includes(e.name);
+            return (
+              <div key={e.name} className="ex-row">
+                <button className="ex-row-main" onClick={() => toggle(e.name)} aria-pressed={on}>
+                  <span className="ex-check" style={on ? { background: colorOf(e.name), borderColor: colorOf(e.name) } : undefined}>{on && <Icon name="check" size={14} stroke={3} />}</span>
+                  <span style={{ minWidth: 0 }}>
+                    <span className="ex-row-name">{translateExercise(e.name, exLang)}</span>
+                    <span className="ex-row-sub">{translateGroup(e.group, 'it')} · {t('times')(e.sessions)}</span>
+                  </span>
+                </button>
+                <button className={`star ${fav ? 'on' : ''}`} onClick={() => toggleFav(e.name)} aria-pressed={fav} aria-label={fav ? t('favRemove') : t('favAdd')}>
+                  <Icon name="star" size={22} stroke={1.8} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Progress({ model, lang, exLang, unit }) {
   const t = makeT(lang);
   const [selected, setSelected] = useState(() => (model.exerciseList[0] ? [model.exerciseList[0].name] : []));
   const [query, setQuery] = useState('');
+  const [picker, setPicker] = useState(false);
+  const [favs, setFavs] = useState(loadFavs);
   const [range, setRange] = useState('6m');
   const [bands, setBands] = useState(true);
 
@@ -162,6 +213,15 @@ export default function Progress({ model, lang, exLang, unit }) {
     const q = query.trim().toLowerCase();
     return model.exerciseList.filter(e => !q || e.name.toLowerCase().includes(q) || translateExercise(e.name, exLang).toLowerCase().includes(q));
   }, [model, query, exLang]);
+
+  const toggleFav = name => setFavs(prev => { const next = prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]; try { localStorage.setItem(FAV_KEY, JSON.stringify(next)); } catch (e) { /* noop */ } return next; });
+  // scrollina: preferiti (ordine per frequenza/recenza) + eventuali esercizi selezionati non preferiti
+  const chipList = useMemo(() => {
+    const byName = new Map(model.exerciseList.map(e => [e.name, e]));
+    const fav = model.exerciseList.filter(e => favs.includes(e.name));
+    const extra = selected.filter(n => !favs.includes(n) && byName.has(n)).map(n => byName.get(n));
+    return [...fav, ...extra];
+  }, [model, favs, selected]);
 
   const toggle = name => setSelected(prev => (prev.includes(name) ? prev.filter(n => n !== name) : prev.length >= 4 ? [...prev.slice(1), name] : [...prev, name]));
   const colorOf = name => COLORS.series[Math.max(0, selected.indexOf(name)) % COLORS.series.length];
@@ -176,12 +236,13 @@ export default function Progress({ model, lang, exLang, unit }) {
       </div>
 
       <div style={{ display: 'grid', gap: 10 }}>
-        <div className="search">
+        <button className="search search-btn" onClick={() => setPicker(true)} aria-haspopup="dialog">
           <Icon name="search" size={18} />
-          <input className="field" value={query} onChange={e => setQuery(e.target.value)} placeholder={t('search')} inputMode="search" />
-        </div>
+          <span className="field">{t('search')}</span>
+        </button>
         <div className="chips">
-          {list.map(e => {
+          {chipList.length === 0 && <span className="muted" style={{ fontSize: 13, padding: '8px 0' }}>{t('noFavs')}</span>}
+          {chipList.map(e => {
             const on = selected.includes(e.name);
             const c = on ? colorOf(e.name) : null;
             return (
@@ -192,8 +253,13 @@ export default function Progress({ model, lang, exLang, unit }) {
             );
           })}
         </div>
-        <div className="label" style={{ fontSize: 9 }}>{t('max4')}</div>
+        <div className="label" style={{ fontSize: 12 }}>{t('max4')}</div>
       </div>
+
+      {picker && (
+        <ExercisePicker list={list} query={query} setQuery={setQuery} selected={selected} colorOf={colorOf} toggle={toggle}
+          favs={favs} toggleFav={toggleFav} exLang={exLang} lang={lang} t={t} onClose={() => { setPicker(false); setQuery(''); }} />
+      )}
 
       {selected.length > 0 && (
         <Card>

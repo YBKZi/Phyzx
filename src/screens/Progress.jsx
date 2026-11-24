@@ -1,0 +1,220 @@
+import React, { useMemo, useState } from 'react';
+import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
+import { translateExercise, translateGroup, GROUP_COLOR } from '../lib/core.js';
+import { exerciseSummary, trainingPeriods, todayStr, addDays } from '../lib/stats.js';
+import { makeT, dateShort, dateDay, dateMonthYear, wu, wv, num } from '../lib/i18n.js';
+import { Card, Label, Stat, Delta, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
+import { topSetText } from './Last.jsx';
+
+const RANGES = { '1m': 30, '3m': 91, '6m': 182, '1y': 365, all: null };
+const dayMs = s => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+const STOP_FILL = { yellow: 'rgba(230,180,80,0.10)', orange: 'rgba(230,140,70,0.13)', red: 'rgba(240,120,140,0.16)' };
+
+function ChartTip({ active, payload, label, series, unit, lang }) {
+  if (!active || !payload || !payload.length) return null;
+  const date = new Date(label).toISOString().slice(0, 10);
+  return (
+    <div className="tip">
+      <div className="t-date">{dateShort(lang, date)}</div>
+      {series.map(s => {
+        const row = payload.find(p => p.dataKey === s.name);
+        if (!row || row.value == null) return null;
+        return (
+          <div key={s.name} className="t-row">
+            <span className="row" style={{ gap: 6 }}><span className="dot" style={{ background: s.color }} /><span className="muted" style={{ maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.label}</span></span>
+            <b>{row.value}{s.bw ? '' : unit}</b>
+          </div>
+        );
+      })}
+      {series.length === 1 && payload[0] && payload[0].payload[`${series[0].name}__d`] ? <div className="muted mono" style={{ fontSize: 10.5, marginTop: 4 }}>{payload[0].payload[`${series[0].name}__d`]}</div> : null}
+    </div>
+  );
+}
+
+function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t }) {
+  const today = todayStr();
+  const series = selected.map((name, i) => ({ name, label: translateExercise(name, exLang), color: COLORS.series[i % COLORS.series.length], bw: model.history[name][0].bw && model.history[name].every(s => s.bw) }));
+
+  const firstDate = useMemo(() => selected.reduce((m, n) => { const d = model.history[n][0].date; return !m || d < m ? d : m; }, null), [selected, model]);
+  const rangeStart = RANGES[range] == null ? firstDate : addDays(today, -RANGES[range]);
+  const startDate = rangeStart < firstDate ? firstDate : rangeStart;
+  const d0 = dayMs(startDate), d1 = dayMs(today);
+
+  const { data, lo, hi } = useMemo(() => {
+    const byTs = new Map();
+    let lo = Infinity, hi = -Infinity;
+    series.forEach(s => {
+      model.history[s.name].forEach(p => {
+        if (p.ts < d0 - 86400000 || p.ts > d1) return;
+        const v = s.bw ? p.e1rm : wv(p.e1rm, unit);
+        if (!byTs.has(p.ts)) byTs.set(p.ts, { ts: p.ts });
+        const row = byTs.get(p.ts);
+        row[s.name] = v;
+        row[`${s.name}__pr`] = p.isPR;
+        row[`${s.name}__d`] = p.bw ? `${p.topReps} ${t('reps')}` : `${wu(p.topKg, unit)} × ${p.topReps}`;
+        lo = Math.min(lo, v); hi = Math.max(hi, v);
+      });
+    });
+    return { data: [...byTs.values()].sort((a, b) => a.ts - b.ts), lo, hi };
+  }, [selected, model, unit, d0, d1]);
+
+  const periods = useMemo(() => (bands ? trainingPeriods(model.raw) : []), [bands, model]);
+  const span = hi - lo || hi * 0.1 || 1;
+  const yDomain = data.length ? [Math.max(0, Math.floor(lo - span * 0.25)), Math.ceil(hi + span * 0.2)] : [0, 100];
+  const single = series.length === 1;
+
+  if (!data.length) return <div className="muted" style={{ padding: '60px 0', textAlign: 'center' }}>{t('empty')}</div>;
+
+  return (
+    <div style={{ width: '100%', height: 270, marginLeft: -10 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="bandGood" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#5AE0A8" stopOpacity="0" /><stop offset="14%" stopColor="#5AE0A8" stopOpacity="0.17" />
+              <stop offset="86%" stopColor="#5AE0A8" stopOpacity="0.17" /><stop offset="100%" stopColor="#5AE0A8" stopOpacity="0" />
+            </linearGradient>
+            {series.map(s => (
+              <linearGradient key={s.name} id={`ar-${s.color.slice(1)}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={s.color} stopOpacity={single ? 0.32 : 0.08} /><stop offset="100%" stopColor={s.color} stopOpacity="0" />
+              </linearGradient>
+            ))}
+          </defs>
+          <CartesianGrid stroke="rgba(255,255,255,0.07)" strokeDasharray="1 5" vertical={false} />
+          {bands && periods.filter(p => p.endTs >= d0 && p.startTs <= d1).map((p, i) => {
+            const fill = p.type === 'stop' ? STOP_FILL[p.stopColor] : (p.quality === 'positive' ? 'url(#bandGood)' : null);
+            if (!fill) return null;
+            return <ReferenceArea key={i} x1={Math.max(p.startTs, d0)} x2={Math.min(p.endTs, d1)} fill={fill} stroke="none" ifOverflow="hidden" />;
+          })}
+          <XAxis dataKey="ts" type="number" scale="time" domain={[d0, d1]} tickCount={range === 'all' || range === '1y' ? 4 : 5} minTickGap={34} tickFormatter={ts => (range === '1m' || range === '3m' ? dateDay(lang, new Date(ts).toISOString().slice(0, 10)) : range === '6m' ? dateMonthYear(lang, ts).split(' ')[0] : dateMonthYear(lang, ts))}
+            axisLine={false} tickLine={false} tickMargin={8} allowDataOverflow />
+          <YAxis domain={yDomain} width={44} axisLine={false} tickLine={false} tickCount={5} allowDataOverflow />
+          <Tooltip cursor={{ stroke: 'rgba(255,255,255,0.25)', strokeDasharray: '3 3' }} content={<ChartTip series={series} unit={unit === 'lb' ? 'lb' : 'kg'} lang={lang} />} />
+          {series.map(s => (
+            <Area key={s.name} type="monotone" dataKey={s.name} stroke={s.color} strokeWidth={2.2} fill={`url(#ar-${s.color.slice(1)})`}
+              connectNulls isAnimationActive={false}
+              dot={p => (p.payload[`${s.name}__pr`]
+                ? <circle key={`${s.name}-${p.index}`} cx={p.cx} cy={p.cy} r="4" fill="#E6B450" stroke="#05070B" strokeWidth="1.5" />
+                : <circle key={`${s.name}-${p.index}`} cx={p.cx} cy={p.cy} r="2" fill={s.color} />)}
+              activeDot={{ r: 5, stroke: '#05070B', strokeWidth: 2, fill: s.color }} />
+          ))}
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function SummaryCard({ name, color, model, lang, exLang, unit, t }) {
+  const sum = exerciseSummary(model.history[name]);
+  if (!sum) return null;
+  const spark = model.history[name].slice(-14).map(s => s.e1rm);
+  const val = e => (sum.bw ? `${Math.round(e.e1rm)} ${t('reps')}` : wu(e.e1rm, unit));
+  return (
+    <Card>
+      <div className="row between" style={{ marginBottom: 10 }}>
+        <span className="row" style={{ gap: 8 }}><span className="dot" style={{ background: color, boxShadow: `0 0 10px ${color}88` }} /><span className="ex-name">{translateExercise(name, exLang)}</span></span>
+        <span className="label">{translateGroup(model.groupOf[name], lang)}</span>
+      </div>
+      <div className="grid2" style={{ gap: 8 }}>
+        <Stat value={val(sum.last)} label={t('current')} />
+        <Stat value={val(sum.best)} label={t('best')} sub={dateShort(lang, sum.best.date)} />
+        <Stat value={<Delta v={sum.delta30} digits={1} />} label={t('change30')} />
+        <Stat value={<Delta v={sum.delta90} digits={1} />} label={t('change90')} />
+      </div>
+      <div style={{ marginTop: 12 }}><Sparkline values={spark} color={color} height={38} area={false} /></div>
+      <div className="row between muted mono" style={{ fontSize: 11, marginTop: 8 }}>
+        <span>{sum.sessions} {t('sessions').toLowerCase()}</span><span>{num(sum.perWeek, 1)} {t('perWeek')}</span>
+      </div>
+    </Card>
+  );
+}
+
+export default function Progress({ model, lang, exLang, unit }) {
+  const t = makeT(lang);
+  const [selected, setSelected] = useState(() => (model.exerciseList[0] ? [model.exerciseList[0].name] : []));
+  const [query, setQuery] = useState('');
+  const [range, setRange] = useState('6m');
+  const [bands, setBands] = useState(true);
+
+  const list = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return model.exerciseList.filter(e => !q || e.name.toLowerCase().includes(q) || translateExercise(e.name, exLang).toLowerCase().includes(q));
+  }, [model, query, exLang]);
+
+  const toggle = name => setSelected(prev => (prev.includes(name) ? prev.filter(n => n !== name) : prev.length >= 4 ? [...prev.slice(1), name] : [...prev, name]));
+  const colorOf = name => COLORS.series[Math.max(0, selected.indexOf(name)) % COLORS.series.length];
+  const primary = selected[0];
+  const hist = primary ? model.history[primary] : [];
+
+  return (
+    <div className="screen">
+      <div>
+        <Label>{t('est1rm')} · {unit}</Label>
+        <h1 className="h1">{t('progress')}</h1>
+      </div>
+
+      <div style={{ display: 'grid', gap: 10 }}>
+        <div className="search">
+          <Icon name="search" size={18} />
+          <input className="field" value={query} onChange={e => setQuery(e.target.value)} placeholder={t('search')} inputMode="search" />
+        </div>
+        <div className="chips">
+          {list.map(e => {
+            const on = selected.includes(e.name);
+            const c = on ? colorOf(e.name) : null;
+            return (
+              <button key={e.name} className={`chip ${on ? 'on' : ''}`} style={on ? { borderColor: c } : undefined} onClick={() => toggle(e.name)}>
+                {on && <span className="dot" style={{ background: c, boxShadow: `0 0 8px ${c}` }} />}
+                {translateExercise(e.name, exLang)}
+              </button>
+            );
+          })}
+        </div>
+        <div className="label" style={{ fontSize: 9 }}>{t('max4')}</div>
+      </div>
+
+      {selected.length > 0 && (
+        <Card>
+          <div className="row between" style={{ marginBottom: 12 }}>
+            <Label>{t('trend')}</Label>
+            <Segmented small value={range} onChange={setRange} options={[
+              { value: '1m', label: t('range1m') }, { value: '3m', label: t('range3m') }, { value: '6m', label: t('range6m') },
+              { value: '1y', label: t('range1y') }, { value: 'all', label: t('rangeAll') },
+            ]} />
+          </div>
+          <ProgressChart model={model} selected={selected} lang={lang} exLang={exLang} unit={unit} range={range} bands={bands} t={t} />
+          <div className="hr" />
+          <div className="row between" style={{ alignItems: 'flex-start', gap: 12 }}>
+            <div className="legend">
+              <span><i className="dot" style={{ background: '#5AE0A8', opacity: .7 }} />{t('legendGood')}</span>
+              <span><i className="dot" style={{ background: COLORS.warn, opacity: .8 }} />{t('legendPause')}</span>
+              <span><i className="dot" style={{ background: COLORS.down, opacity: .8 }} />{t('legendStop')}</span>
+              <span><i className="dot" style={{ background: '#E6B450' }} />{t('record')}</span>
+            </div>
+            <button className="pill" onClick={() => setBands(b => !b)} style={{ color: bands ? COLORS.accent : undefined, borderColor: bands ? 'rgba(90,222,205,.4)' : undefined }}>{bands ? t('bandsOn') : t('bandsOff')}</button>
+          </div>
+        </Card>
+      )}
+
+      {selected.map(n => <SummaryCard key={n} name={n} color={colorOf(n)} model={model} lang={lang} exLang={exLang} unit={unit} t={t} />)}
+
+      {primary && (
+        <Card>
+          <div className="card-title"><Label>{t('recentSessions')}</Label><span className="label" style={{ fontSize: 9 }}>{translateExercise(primary, exLang)}</span></div>
+          <table className="table">
+            <thead><tr><th>{t('date')}</th><th>{t('topSet')}</th><th>{t('est1rm')}</th></tr></thead>
+            <tbody>
+              {[...hist].reverse().slice(0, 10).map(s => (
+                <tr key={s.date}>
+                  <td>{dateShort(lang, s.date)}</td>
+                  <td style={{ color: 'var(--text)', textAlign: 'left' }}>{topSetText({ bw: s.bw, topKg: s.topKg, topReps: s.topReps }, unit, t)} {s.isPR && <PRBadge label={t('pr')} />}</td>
+                  <td><span style={{ marginRight: 8 }}>{s.bw ? '' : wu(s.e1rm, unit)}</span><Delta v={s.deltaPct} digits={1} compact /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
+    </div>
+  );
+}

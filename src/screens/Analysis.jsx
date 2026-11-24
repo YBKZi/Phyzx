@@ -3,7 +3,7 @@ import { translateExercise, GROUP_COLOR } from '../lib/core.js';
 import { todayStr } from '../lib/stats.js';
 import { buildAnalysis } from '../lib/analytics.js';
 import { dateShort, dateDay, wu, num, pct } from '../lib/i18n.js';
-import { Card, Label, Stat, Delta, PRBadge, Donut, COLORS } from '../ui/kit.jsx';
+import { Card, Label, Stat, Delta, DeltaPill, Hero, PRBadge, Donut, COLORS } from '../ui/kit.jsx';
 
 const gColor = g => GROUP_COLOR[g] || COLORS.flat;
 const MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
@@ -76,11 +76,13 @@ export default function Analysis({ model, unit }) {
         <h1 className="h1">Analisi</h1>
       </div>
 
+      <Hero tone="violet" eyebrow="Allenamenti totali" tag={`da ${fmtSpan(o.spanDays)}`} value={o.workouts}
+        pills={<><span className="dpill">{num(o.perWeek, 1)} a settimana</span><span className="dpill">{a.records.total} record</span></>}
+        foot={<><span>{o.sets} serie</span><span>{o.exercises} esercizi diversi</span></>} />
+
       <div className="grid2">
-        <Stat value={o.workouts} label="Allenamenti" sub={`da ${fmtSpan(o.spanDays)}`} />
-        <Stat value={o.exercises} label="Esercizi diversi" />
-        <Stat value={num(o.perWeek, 1)} label="A settimana" sub="media storica" />
-        <Stat value={num(o.setsPerWorkout, 1)} label="Serie per allenamento" sub={`${num(o.exPerWorkout, 1)} esercizi`} />
+        <Stat value={num(o.setsPerWorkout, 1)} label="Serie per allenamento" />
+        <Stat value={num(o.exPerWorkout, 1)} label="Esercizi per allenamento" />
       </div>
 
       <Card>

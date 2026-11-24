@@ -29,7 +29,8 @@
 html { background: var(--bg); }
 html, body { margin: 0; min-height: 100%; }
 body {
-  background: var(--bg);
+  background: radial-gradient(120% 50% at 50% -8%, #0B2347 0%, rgba(11,35,71,0) 62%) no-repeat, var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   font-family: var(--body);
   font-size: 15.5px;
@@ -68,14 +69,14 @@ input[type="file"] { display: none; }
 .muted { color: var(--text-2); }
 
 /* ── Card (piatte, morbide) ────────────────────────────────────────────── */
-.card { position: relative; background: var(--surface); border-radius: var(--radius); padding: 18px; }
+.card { position: relative; background: linear-gradient(180deg, #17171B 0%, #111114 100%); box-shadow: 0 0 0 1px rgba(255,255,255,.055) inset; border-radius: var(--radius); padding: 18px; }
 .card.tap { cursor: pointer; transition: transform .12s ease, background .2s ease; }
 .card.tap:active { transform: scale(0.985); background: var(--surface-2); }
 .card.flush { padding: 0; overflow: hidden; }
 .card-title { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
 .card-title .label { color: var(--text); font-weight: 700; font-size: 17px; letter-spacing: -0.02em; }
 
-.stat { padding: 14px 14px 13px; border-radius: 18px; background: var(--surface-2); }
+.stat { padding: 14px 14px 13px; border-radius: 18px; background: #1C1C21; box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset; }
 .stat-v { font-size: 24px; font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 4px; }
 .stat-sub { font-size: 11.5px; color: var(--text-2); margin-top: 3px; }
 .stat .label { font-size: 12px; }
@@ -147,6 +148,24 @@ input[type="file"] { display: none; }
 .import-btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 16px; border-radius: 999px; background: var(--blue); color: #fff; font-family: var(--display); font-weight: 700; font-size: 14px; cursor: pointer; flex-shrink: 0; transition: transform .12s, opacity .2s; }
 .import-btn:active { transform: scale(.96); }
 .import-btn.off { opacity: .55; }
+
+/* ── Hero ──────────────────────────────────────────────────────────────── */
+.hero { position: relative; overflow: hidden; border-radius: 30px; padding: 20px 20px 18px; color: #fff; isolation: isolate; box-shadow: 0 0 0 1px rgba(255,255,255,.1) inset, 0 24px 60px -20px var(--hero-glow); }
+.hero::before { content: ''; position: absolute; inset: 0; z-index: -2; background: var(--hero-bg); }
+.hero::after { content: ''; position: absolute; width: 320px; height: 320px; right: -110px; top: -150px; z-index: -1; border-radius: 50%; background: radial-gradient(circle, var(--hero-spot) 0%, transparent 68%); }
+.hero.blue { --hero-bg: linear-gradient(145deg, #0A4FD1 0%, #0A2D86 48%, #061433 100%); --hero-spot: rgba(120,190,255,.55); --hero-glow: rgba(10,79,209,.55); }
+.hero.violet { --hero-bg: linear-gradient(145deg, #6B3DF0 0%, #3A1E96 50%, #12082F 100%); --hero-spot: rgba(190,150,255,.5); --hero-glow: rgba(107,61,240,.5); }
+.hero.green { --hero-bg: linear-gradient(145deg, #0E9F6E 0%, #08533F 52%, #04170F 100%); --hero-spot: rgba(110,240,190,.45); --hero-glow: rgba(14,159,110,.45); }
+.hero-eyebrow { font-size: 14px; font-weight: 600; color: rgba(255,255,255,.78); letter-spacing: -0.01em; }
+.hero-tag { font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: rgba(255,255,255,.16); color: #fff; }
+.hero-num { font-family: var(--display); font-weight: 800; font-size: 54px; line-height: 1; letter-spacing: -0.045em; margin: 12px 0 14px; }
+.hero-num small { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin-left: 6px; opacity: .8; }
+.hero-foot { margin-top: 16px; font-size: 13px; color: rgba(255,255,255,.72); display: flex; justify-content: space-between; gap: 10px; }
+.dpill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; background: rgba(255,255,255,.16); color: #fff; font-family: var(--display); }
+.dpill em { font-style: normal; font-weight: 600; opacity: .72; font-size: 12px; }
+.dpill.up { background: rgba(31,209,122,.22); color: #5CF2A8; }
+.dpill.down { background: rgba(255,79,94,.24); color: #FF8A95; }
+.hero .dot { box-shadow: none; }
 
 /* ── Selettore esercizi (bottom sheet) ─────────────────────────────────── */
 .search-btn { width: 100%; text-align: left; display: block; }

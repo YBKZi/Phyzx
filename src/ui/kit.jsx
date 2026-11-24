@@ -30,6 +30,27 @@ export function Delta({ v, digits = 1, compact }) {
   return <span className={`delta ${dir}`}>{arrow}{compact ? '' : ' '}{pct(Math.abs(v) < 0.005 ? 0 : v, digits).replace(/^\+/, '')}</span>;
 }
 
+// Pillola con variazione percentuale (▲ verde / ▼ rosso)
+export function DeltaPill({ v, label, digits = 1 }) {
+  if (v == null) return null;
+  const dir = Math.abs(v) < 0.005 ? 'flat' : v > 0 ? 'up' : 'down';
+  const arrow = dir === 'up' ? '▲' : dir === 'down' ? '▼' : '•';
+  return <span className={`dpill ${dir}`}>{arrow} {pct(Math.abs(v) < 0.005 ? 0 : v, digits).replace(/^\+/, '')}{label ? <em>{label}</em> : null}</span>;
+}
+
+// Scheda di apertura di ogni schermata: gradiente colorato, numero gigante
+export function Hero({ tone = 'blue', eyebrow, tag, value, unit, pills, children, foot }) {
+  return (
+    <div className={`hero ${tone}`}>
+      <div className="row between"><span className="hero-eyebrow">{eyebrow}</span>{tag ? <span className="hero-tag">{tag}</span> : null}</div>
+      <div className="hero-num">{value}{unit ? <small>{unit}</small> : null}</div>
+      {pills ? <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>{pills}</div> : null}
+      {children ? <div style={{ margin: '14px -6px -4px' }}>{children}</div> : null}
+      {foot ? <div className="hero-foot">{foot}</div> : null}
+    </div>
+  );
+}
+
 export function Segmented({ options, value, onChange, small }) {
   return (
     <div className={`seg ${small ? 'small' : ''}`} role="tablist">

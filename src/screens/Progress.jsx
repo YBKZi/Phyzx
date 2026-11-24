@@ -3,7 +3,7 @@ import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveCo
 import { translateExercise, translateGroup, GROUP_COLOR, unitFor } from '../lib/core.js';
 import { exerciseSummary, trainingPeriods, todayStr, addDays } from '../lib/stats.js';
 import { topSetText, makeT, dateShort, dateDay, dateMonthYear, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
-import { Card, Label, Stat, Delta, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
+import { Card, Label, Stat, Delta, DeltaPill, Hero, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
 
 // Unità di ogni esercizio sul grafico: se se ne mescolano due, tutto in kg (libbre convertite)
 const unitsFor = (names, unit) => {
@@ -259,6 +259,8 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
   const colorOf = name => COLORS.series[Math.max(0, selected.indexOf(name)) % COLORS.series.length];
   const primary = selected[0];
   const hist = primary ? model.history[primary] : [];
+  const heroSum = primary ? exerciseSummary(model.history[primary]) : null;
+  const heroU = primary ? unitFor(primary, unit) : unit;
 
   return (
     <div className="screen">
@@ -298,6 +300,15 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
       {picker && (
         <ExercisePicker list={list} query={query} setQuery={setQuery} selected={selected} colorOf={colorOf} toggle={toggle}
           favs={favs} toggleFav={toggleFav} exLang={exLang} lang={lang} t={t} onClose={() => { setPicker(false); setQuery(''); }} />
+      )}
+
+      {primary && heroSum && (
+        <Hero tone="blue" eyebrow={translateExercise(primary, exLang)} tag={`${translateGroup(model.groupOf[primary], lang)} · 1RM stimato`}
+          value={heroSum.bw ? Math.round(heroSum.last.e1rm) : num(wv(heroSum.last.e1rm, heroU), 1)} unit={heroSum.bw ? t('reps') : heroU}
+          pills={<><DeltaPill v={heroSum.delta30} label="30 gg" /><DeltaPill v={heroSum.delta90} label="90 gg" /></>}
+          foot={<><span>Record {heroSum.bw ? `${Math.round(heroSum.best.e1rm)} ${t('reps')}` : wu(heroSum.best.e1rm, heroU)}</span><span>{heroSum.sessions} sessioni</span></>}>
+          <Sparkline values={model.history[primary].slice(-30).map(s => s.e1rm)} color="#FFFFFF" height={70} />
+        </Hero>
       )}
 
       {selected.length > 0 && (

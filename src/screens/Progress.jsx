@@ -1,9 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
-import { translateExercise, translateGroup, GROUP_COLOR } from '../lib/core.js';
+import { translateExercise, translateGroup, GROUP_COLOR, unitFor } from '../lib/core.js';
 import { exerciseSummary, trainingPeriods, todayStr, addDays } from '../lib/stats.js';
 import { topSetText, makeT, dateShort, dateDay, dateMonthYear, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
 import { Card, Label, Stat, Delta, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
+
+// Unità di ogni esercizio sul grafico: se se ne mescolano due, tutto in kg (libbre convertite)
+const unitsFor = (names, unit) => {
+  const set = new Set(names.map(n => unitFor(n, unit)));
+  return n => (set.size > 1 ? 'kg' : unitFor(n, unit));
+};
 
 const RANGES = { '1m': 30, '3m': 91, '6m': 182, '1y': 365, all: null };
 const dayMs = s => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
@@ -22,7 +28,7 @@ function ChartTip({ active, payload, label, series, unit, lang }) {
           <div key={s.name} className="t-row">
             <span className="dot" style={{ background: s.color }} />
             <span className="row" style={{ gap: 8 }}>
-              <b>{num(row.value, 1)}{s.bw ? '' : unitLabelFor(s.name, unit)}</b>
+              <b>{num(row.value, 1)}{s.bw ? '' : s.u}</b>
               {row.payload[`${s.name}__delta`] != null && <Delta v={row.payload[`${s.name}__delta`]} digits={1} />}
             </span>
           </div>
@@ -52,7 +58,8 @@ function Crosshair({ points, top, height, left, width, payload, domain }) {
 
 function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t }) {
   const today = todayStr();
-  const series = selected.map((name, i) => ({ name, label: translateExercise(name, exLang), color: COLORS.series[i % COLORS.series.length], bw: model.history[name][0].bw && model.history[name].every(s => s.bw) }));
+  const uOf = unitsFor(selected, unit);
+  const series = selected.map((name, i) => ({ u: uOf(name), name, label: translateExercise(name, exLang), color: COLORS.series[i % COLORS.series.length], bw: model.history[name][0].bw && model.history[name].every(s => s.bw) }));
 
   const firstDate = useMemo(() => selected.reduce((m, n) => { const d = model.history[n][0].date; return !m || d < m ? d : m; }, null), [selected, model]);
   const rangeStart = RANGES[range] == null ? firstDate : addDays(today, -RANGES[range]);
@@ -65,13 +72,13 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
     series.forEach(s => {
       model.history[s.name].forEach(p => {
         if (p.ts < d0 - 86400000 || p.ts > d1) return;
-        const v = s.bw ? p.e1rm : wv(p.e1rm, unit, s.name);
+        const v = s.bw ? p.e1rm : wv(p.e1rm, s.u);
         if (!byTs.has(p.ts)) byTs.set(p.ts, { ts: p.ts });
         const row = byTs.get(p.ts);
         row[s.name] = v;
         row[`${s.name}__pr`] = p.isPR;
         row[`${s.name}__delta`] = p.deltaPct;
-        row[`${s.name}__d`] = p.bw ? `${p.topReps} ${t('reps')}` : `${wu(p.topKg, unit, s.name)} × ${p.topReps}`;
+        row[`${s.name}__d`] = p.bw ? `${p.topReps} ${t('reps')}` : `${wu(p.topKg, s.u)} × ${p.topReps}`;
         lo = Math.min(lo, v); hi = Math.max(hi, v);
       });
     });
@@ -83,7 +90,7 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
   const yDomain = data.length ? [Math.max(0, Math.floor(lo - span * 0.25)), Math.ceil(hi + span * 0.2)] : [0, 100];
   const single = series.length === 1;
   // unità sull'asse: solo se tutte le serie con carico usano la stessa unità
-  const axisUnits = [...new Set(series.filter(s => !s.bw).map(s => unitLabelFor(s.name, unit)))];
+  const axisUnits = [...new Set(series.filter(s => !s.bw).map(s => s.u))];
   const axisUnit = axisUnits.length === 1 && series.every(s => !s.bw) ? axisUnits[0] : '';
 
   if (!data.length) return <div className="muted" style={{ padding: '60px 0', textAlign: 'center' }}>{t('empty')}</div>;
@@ -257,7 +264,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
     <div className="screen">
       <div className="row between" style={{ alignItems: 'flex-end' }}>
         <div>
-          <Label>{t('est1rm')} · {[...new Set(selected.map(n => unitLabelFor(n, unit)))].join(' / ')}</Label>
+          <Label>{t('est1rm')} · {unitsFor(selected, unit)(selected[0] || '')}</Label>
           <h1 className="h1">{t('progress')}</h1>
         </div>
         <label className={`import-btn ${importing ? 'off' : ''}`} aria-label={t('importTitle')}>

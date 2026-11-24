@@ -65,6 +65,23 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
 
   if (!data.length) return <div className="muted" style={{ padding: '60px 0', textAlign: 'center' }}>{t('empty')}</div>;
 
+  // Tratti "spenti": più di 14 giorni tra due sessioni e prestazione peggiorata → linea quasi trasparente.
+  const strokes = Object.fromEntries(series.map(s => {
+    const pts = data.filter(r => r[s.name] != null);
+    const t0 = pts.length ? pts[0].ts : 0, t1 = pts.length ? pts[pts.length - 1].ts : 0;
+    const bad = [];
+    for (let i = 1; i < pts.length; i++) {
+      if ((pts[i].ts - pts[i - 1].ts) / 86400000 > 14 && pts[i][s.name] < pts[i - 1][s.name]) bad.push([pts[i - 1].ts, pts[i].ts]);
+    }
+    const stops = [];
+    if (bad.length && t1 > t0) {
+      stops.push([0, 1]);
+      bad.forEach(([a, b]) => { const oa = (a - t0) / (t1 - t0), ob = (b - t0) / (t1 - t0); stops.push([oa, 1], [oa, 0.2], [ob, 0.2], [ob, 1]); });
+      stops.push([1, 1]);
+    }
+    return [s.name, { id: `ln-${s.color.slice(1)}`, stops }];
+  }));
+
   return (
     <div style={{ width: '100%', height: 270, marginLeft: -10 }}>
       <ResponsiveContainer width="100%" height="100%">
@@ -74,6 +91,11 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
               <stop offset="0%" stopColor="#1FD17A" stopOpacity="0" /><stop offset="14%" stopColor="#1FD17A" stopOpacity="0.17" />
               <stop offset="86%" stopColor="#1FD17A" stopOpacity="0.17" /><stop offset="100%" stopColor="#1FD17A" stopOpacity="0" />
             </linearGradient>
+            {series.filter(s => strokes[s.name].stops.length).map(s => (
+              <linearGradient key={`ln-${s.name}`} id={strokes[s.name].id} x1="0" y1="0" x2="1" y2="0">
+                {strokes[s.name].stops.map(([o, a], i) => <stop key={i} offset={o} stopColor={s.color} stopOpacity={a} />)}
+              </linearGradient>
+            ))}
             {series.map(s => (
               <linearGradient key={s.name} id={`ar-${s.color.slice(1)}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={s.color} stopOpacity={single ? 0.32 : 0.08} /><stop offset="100%" stopColor={s.color} stopOpacity="0" />
@@ -91,7 +113,7 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
           <YAxis domain={yDomain} width={44} axisLine={false} tickLine={false} tickCount={5} allowDataOverflow />
           <Tooltip cursor={{ stroke: 'rgba(255,255,255,0.25)', strokeDasharray: '3 3' }} content={<ChartTip series={series} unit={unit} lang={lang} />} />
           {series.map(s => (
-            <Area key={s.name} type="monotone" dataKey={s.name} stroke={s.color} strokeWidth={2.2} fill={`url(#ar-${s.color.slice(1)})`}
+            <Area key={s.name} type="monotone" dataKey={s.name} stroke={strokes[s.name].stops.length ? `url(#${strokes[s.name].id})` : s.color} strokeWidth={2.2} fill={`url(#ar-${s.color.slice(1)})`}
               connectNulls isAnimationActive={false}
               dot={p => (p.payload[`${s.name}__pr`]
                 ? <circle key={`${s.name}-${p.index}`} cx={p.cx} cy={p.cy} r="4" fill="#FFC439" stroke="#000000" strokeWidth="1.5" />

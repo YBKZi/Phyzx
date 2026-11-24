@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Papa from 'papaparse';
-import logo from './assets/phyzx-logo.png';
+import logo from './assets/phyzx-icon.png';
 import { WORKOUT_DATA_KEY, UNITS_KEY } from './lib/core.js';
 import { buildModel, liftoffRowsToRaw, mergeRows, normalizeRows, snapKg } from './lib/stats.js';
 import { makeT } from './lib/i18n.js';
@@ -41,7 +41,7 @@ function FirstUpload({ onFile, importing, msg, t }) {
   return (
     <div className="app">
       <div className="screen" style={{ minHeight: '82vh', justifyContent: 'center', gap: 22 }}>
-        <img src={logo} alt="Phyzx" style={{ height: 30, alignSelf: 'flex-start' }} />
+        <img src={logo} alt="Phyzx" width="56" height="56" style={{ borderRadius: 14, alignSelf: 'flex-start', boxShadow: '0 0 0 1px rgba(255,255,255,.08), 0 8px 24px rgba(31,107,255,.28)' }} />
         <div>
           <Label>CSV · Liftoff</Label>
           <h1 className="h1">{t('firstTitle')}</h1>

@@ -218,9 +218,11 @@ export default function Progress({ model, lang, exLang, unit }) {
   // scrollina: preferiti (ordine per frequenza/recenza) + eventuali esercizi selezionati non preferiti
   const chipList = useMemo(() => {
     const byName = new Map(model.exerciseList.map(e => [e.name, e]));
+    // scrollina: recenza → svolto prima nell'ultimo giorno → frequenza → alfabetico
+    const byRecency = (x, y) => y.last.localeCompare(x.last) || x.lastPos - y.lastPos || y.sessions - x.sessions || x.name.localeCompare(y.name);
     const fav = model.exerciseList.filter(e => favs.includes(e.name));
     const extra = selected.filter(n => !favs.includes(n) && byName.has(n)).map(n => byName.get(n));
-    return [...fav, ...extra];
+    return [...fav, ...extra].sort(byRecency);
   }, [model, favs, selected]);
 
   const toggle = name => setSelected(prev => (prev.includes(name) ? prev.filter(n => n !== name) : prev.length >= 4 ? [...prev.slice(1), name] : [...prev, name]));

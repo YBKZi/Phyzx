@@ -20,13 +20,33 @@ function ChartTip({ active, payload, label, series, unit, lang }) {
         if (!row || row.value == null) return null;
         return (
           <div key={s.name} className="t-row">
-            <span className="row" style={{ gap: 6 }}><span className="dot" style={{ background: s.color }} /><span className="muted" style={{ maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.label}</span></span>
-            <b>{row.value}{s.bw ? '' : unitLabelFor(s.name, unit)}</b>
+            <span className="dot" style={{ background: s.color }} />
+            <span className="row" style={{ gap: 8 }}>
+              <b>{num(row.value, 1)}{s.bw ? '' : unitLabelFor(s.name, unit)}</b>
+              {row.payload[`${s.name}__delta`] != null && <Delta v={row.payload[`${s.name}__delta`]} digits={1} />}
+            </span>
           </div>
         );
       })}
       {series.length === 1 && payload[0] && payload[0].payload[`${series[0].name}__d`] ? <div className="muted mono" style={{ fontSize: 10.5, marginTop: 4 }}>{payload[0].payload[`${series[0].name}__d`]}</div> : null}
     </div>
+  );
+}
+
+// Mirino: linea verticale tratteggiata + una orizzontale per ogni serie all'altezza del suo valore
+function Crosshair({ points, top, height, left, width, payload, domain }) {
+  if (!points || !points.length) return null;
+  const x = points[0].x;
+  const [d0, d1] = domain;
+  const stroke = 'rgba(255,255,255,0.35)';
+  return (
+    <g pointerEvents="none">
+      <line x1={x} x2={x} y1={top} y2={top + height} stroke={stroke} strokeDasharray="3 3" />
+      {(payload || []).filter(p => p.value != null && d1 > d0).map(p => {
+        const y = top + height * (1 - (p.value - d0) / (d1 - d0));
+        return <line key={p.dataKey} x1={left} x2={left + width} y1={y} y2={y} stroke={stroke} strokeDasharray="3 3" />;
+      })}
+    </g>
   );
 }
 
@@ -50,6 +70,7 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
         const row = byTs.get(p.ts);
         row[s.name] = v;
         row[`${s.name}__pr`] = p.isPR;
+        row[`${s.name}__delta`] = p.deltaPct;
         row[`${s.name}__d`] = p.bw ? `${p.topReps} ${t('reps')}` : `${wu(p.topKg, unit, s.name)} × ${p.topReps}`;
         lo = Math.min(lo, v); hi = Math.max(hi, v);
       });
@@ -110,7 +131,7 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
           <XAxis dataKey="ts" type="number" scale="time" domain={[d0, d1]} tickCount={range === 'all' || range === '1y' ? 4 : 5} minTickGap={34} tickFormatter={ts => (range === '1m' || range === '3m' ? dateDay(lang, new Date(ts).toISOString().slice(0, 10)) : range === '6m' ? dateMonthYear(lang, ts).split(' ')[0] : dateMonthYear(lang, ts))}
             axisLine={false} tickLine={false} tickMargin={8} allowDataOverflow />
           <YAxis domain={yDomain} width={44} axisLine={false} tickLine={false} tickCount={5} allowDataOverflow />
-          <Tooltip cursor={{ stroke: 'rgba(255,255,255,0.25)', strokeDasharray: '3 3' }} content={<ChartTip series={series} unit={unit} lang={lang} />} />
+          <Tooltip cursor={<Crosshair domain={yDomain} />} content={<ChartTip series={series} unit={unit} lang={lang} />} />
           {series.map(s => (
             <Area key={s.name} type="monotone" dataKey={s.name} stroke={strokes[s.name].stops.length ? `url(#${strokes[s.name].id})` : s.color} strokeWidth={2.2} fill={`url(#ar-${s.color.slice(1)})`}
               connectNulls isAnimationActive={false}

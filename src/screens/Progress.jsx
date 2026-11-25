@@ -4,6 +4,8 @@ import { translateExercise, translateGroup, GROUP_COLOR, unitFor } from '../lib/
 import { exerciseSummary, trainingPeriods, todayStr, addDays } from '../lib/stats.js';
 import { topSetText, makeT, dateShort, dateDay, dateMonthYear, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
 import { Card, Label, Stat, Delta, DeltaPill, Hero, CardTitle, CountUp, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
+import { ProfileButton } from '../ui/Profiles.jsx';
+import { keyFor, FAV_BASE } from '../lib/profiles.js';
 
 // Unità di ogni esercizio sul grafico: se se ne mescolano due, tutto in kg (libbre convertite)
 const unitsFor = (names, unit) => {
@@ -181,8 +183,7 @@ function SummaryCard({ name, color, model, lang, exLang, unit, t }) {
   );
 }
 
-const FAV_KEY = 'phyzx-favorites';
-function loadFavs() { try { const v = JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+function loadFavs(id) { try { const v = JSON.parse(localStorage.getItem(keyFor(FAV_BASE, id)) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
 
 function ExercisePicker({ list, query, setQuery, selected, colorOf, toggle, favs, toggleFav, exLang, t, onClose }) {
   React.useEffect(() => {
@@ -230,12 +231,12 @@ function ExercisePicker({ list, query, setQuery, selected, colorOf, toggle, favs
   );
 }
 
-export default function Progress({ model, lang, exLang, unit, onFile, importing, msg }) {
+export default function Progress({ model, lang, exLang, unit, onFile, importing, msg, profile, profileId = 'main', onProfiles }) {
   const t = makeT(lang);
   const [selected, setSelected] = useState(() => (model.exerciseList[0] ? [model.exerciseList[0].name] : []));
   const [query, setQuery] = useState('');
   const [picker, setPicker] = useState(false);
-  const [favs, setFavs] = useState(loadFavs);
+  const [favs, setFavs] = useState(() => loadFavs(profileId));
   const [range, setRange] = useState('6m');
   const [bands, setBands] = useState(true);
 
@@ -244,7 +245,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
     return model.exerciseList.filter(e => !q || e.name.toLowerCase().includes(q) || translateExercise(e.name, exLang).toLowerCase().includes(q));
   }, [model, query, exLang]);
 
-  const toggleFav = name => setFavs(prev => { const next = prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]; try { localStorage.setItem(FAV_KEY, JSON.stringify(next)); } catch (e) { /* noop */ } return next; });
+  const toggleFav = name => setFavs(prev => { const next = prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]; try { localStorage.setItem(keyFor(FAV_BASE, profileId), JSON.stringify(next)); } catch (e) { /* noop */ } return next; });
   // scrollina: preferiti (ordine per frequenza/recenza) + eventuali esercizi selezionati non preferiti
   const chipList = useMemo(() => {
     const byName = new Map(model.exerciseList.map(e => [e.name, e]));
@@ -266,10 +267,13 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
     <div className="screen">
       <div className="row between">
         <h1 className="h1">{t('progress')}</h1>
-        <label className={`import-btn ${importing ? 'off' : ''}`} aria-label={t('importTitle')}>
-          <Icon name="upload" size={16} stroke={2.4} />{importing ? t('importing') : t('importShort')}
-          <input type="file" accept=".csv,text/csv" disabled={importing} onChange={e => { const f = e.target.files[0]; e.target.value = ''; if (f) onFile(f); }} />
-        </label>
+        <div className="head-actions">
+          <label className={`import-btn ${importing ? 'off' : ''}`} aria-label={t('importTitle')}>
+            <Icon name="upload" size={16} stroke={2.4} />{importing ? t('importing') : t('importShort')}
+            <input type="file" accept=".csv,text/csv" disabled={importing} onChange={e => { const f = e.target.files[0]; e.target.value = ''; if (f) onFile(f); }} />
+          </label>
+          {profile && <ProfileButton profile={profile} onClick={onProfiles} />}
+        </div>
       </div>
       {msg && <div className={`msg ${msg.ok ? 'ok' : 'err'}`}>{msg.text}</div>}
 

@@ -218,3 +218,22 @@ input[type="file"] { display: none; }
 input[type="range"] { accent-color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .screen > *, .hero::after { animation: none !important; } * { transition: none !important; } }
+
+/* ── Profili ───────────────────────────────────────────────────────────── */
+.avatar { display: inline-grid; place-items: center; flex-shrink: 0; border-radius: 50%; color: #000; font-family: var(--display); font-weight: 800; line-height: 1; }
+.avatar-btn { flex-shrink: 0; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; box-shadow: 0 0 0 1.5px var(--line-2, rgba(255,255,255,.14)); transition: transform .12s; }
+.avatar-btn:active { transform: scale(.92); }
+.sheet.auto { height: auto; max-height: 86dvh; }
+.sheet-sub { font-size: 13px; color: var(--text-2); margin: 0 0 8px; }
+.prof-row .ex-row-main { padding: 9px 0; }
+.prof-check { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--blue); color: #fff; flex-shrink: 0; }
+.star.del:active, .star.del:hover { color: var(--down); }
+.prof-confirm { padding: 14px 0; border-bottom: 1px solid var(--line); display: grid; gap: 12px; }
+.prof-confirm-text { font-size: 15px; line-height: 1.35; }
+.prof-confirm-text b { font-family: var(--display); }
+.prof-confirm-text span { display: block; font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
+.prof-confirm .row .btn { flex: 1; }
+.btn.danger-solid { background: var(--down); color: #fff; }
+.prof-add { display: flex; gap: 8px; margin-top: 14px; }
+.prof-add .field { flex: 1; min-width: 0; }
+.head-actions { display: flex; align-items: center; gap: 8px; }

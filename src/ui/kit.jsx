@@ -172,6 +172,10 @@ const P = {
   trend: <><path d="m3.5 17 5.5-6 4 3 7-8" /><path d="M15 6h5.5v5.5" /></>,
   star: <><path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9 6.7 19.7l1.1-5.9L3.5 9.7l5.9-.8z" /></>,
   check: <><path d="m5 12.5 4.5 4.5L19 7.5" /></>,
+  plus: <><path d="M12 5v14M5 12h14" /></>,
+  pencil: <><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z" /><path d="m14 7 3 3" /></>,
+  trash: <><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></>,
+  swap: <><path d="M7 4 3 8l4 4M3 8h14M17 12l4 4-4 4M21 16H7" /></>,
 };
 export function Icon({ name, size = 22, stroke = 1.7 }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{P[name]}</svg>;

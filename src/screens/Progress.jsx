@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { translateExercise, translateGroup, GROUP_COLOR, unitFor } from '../lib/core.js';
-import { exerciseSummary, primeEstimate, trainingPeriods, todayStr, addDays, daysBetween } from '../lib/stats.js';
+import { exerciseSummary, primeEstimate, nextPrediction, trainingPeriods, todayStr, addDays, daysBetween } from '../lib/stats.js';
 import { topSetText, makeT, dateShort, dateDay, dateMonthYear, dateMedium, agoLong, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
 import { Card, Label, Stat, Delta, DeltaPill, Hero, CardTitle, CountUp, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
 import PageHeader from '../ui/PageHeader.jsx';
@@ -23,6 +23,29 @@ function RecordLine({ sum, unit, lang, t }) {
         <div className="rec-est">
           <span className="rec-eyebrow">1RM stimato</span>
           <span className="rec-set">{num(wv(b.e1rm, unit), 1)} {unitLabelFor(undefined, unit)}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Previsione per il prossimo workout (serie principale + 1RM atteso con intervallo)
+function NextLine({ pred, unit, t }) {
+  const ul = unitLabelFor(undefined, unit);
+  const w = x => num(wv(x, unit), 1);
+  const rng = (a, b) => (a === b ? `${a}` : `${a}–${b}`);
+  return (
+    <div className="rec-line next-line">
+      <div className="rec-main">
+        <span className="rec-eyebrow">Prossimo workout · previsione</span>
+        <span className="rec-set">{pred.bw ? `${pred.reps} ${t('reps')}` : `${num(wv(pred.kg, unit), wv(pred.kg, unit) % 1 ? 1 : 0)} ${ul} × ${pred.reps}`}</span>
+        <span className="rec-date">{rng(pred.repsLo, pred.repsHi)} {t('reps')}</span>
+      </div>
+      {!pred.bw && (
+        <div className="rec-est">
+          <span className="rec-eyebrow">1RM atteso</span>
+          <span className="rec-set">{w(pred.e1rm)} {ul}</span>
+          <span className="rec-date">{w(pred.lo)}–{w(pred.hi)}</span>
         </div>
       )}
     </div>
@@ -395,6 +418,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
   const hist = primary ? model.history[primary] : [];
   const heroSum = primary ? exerciseSummary(model.history[primary]) : null;
   const heroU = primary ? unitFor(primary, unit) : unit;
+  const heroNext = primary ? nextPrediction(model.history[primary]) : null;
   const hasLevel = selected.some(n => primeEstimate(model.history[n])?.from);
 
   return (
@@ -430,7 +454,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
         <Hero tone="blue" eyebrow={translateExercise(primary, exLang)} tag={`${translateGroup(model.groupOf[primary], lang)} · 1RM stimato`}
           value={heroSum.bw ? <CountUp to={Math.round(heroSum.last.e1rm)} /> : <CountUp to={wv(heroSum.last.e1rm, heroU)} decimals={1} />} unit={heroSum.bw ? t('reps') : heroU}
           pills={<><DeltaPill v={heroSum.delta30} label="30 gg" /><DeltaPill v={heroSum.delta90} label="90 gg" /></>}
-          foot={<RecordLine sum={heroSum} unit={heroU} lang={lang} t={t} />}>
+          foot={<><RecordLine sum={heroSum} unit={heroU} lang={lang} t={t} />{heroNext && <NextLine pred={heroNext} unit={heroU} t={t} />}</>}>
         </Hero>
       )}
 

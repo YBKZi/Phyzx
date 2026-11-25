@@ -269,26 +269,25 @@ function closestIdx(hist, i0, i1, target) {
 
 const median = a => { const v = [...a].sort((x, y) => x - y), m = v.length >> 1; return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
 
-// Un recupero: calo di almeno 8% da un picco P, poi ritorno a ≥ P (−2%). Misura il tratto che parte
-// dall'ultima risalita al livello `lam` (frazione del picco) fino al ritorno al picco.
-function reattainments(hist, lam, bw) {
+// Un recupero: calo di almeno 8% da un picco P (≥ minPeak), poi ritorno a ≥ P (−2%). Misura il tratto che parte
+// dall'ultima risalita al livello `tgt` (quello di oggi) fino al ritorno al picco.
+function reattainments(hist, tgt, bw, minPeak) {
   const tol = bw ? 0 : 0.02;
   const out = [];
   let peak = hist[0].e1rm, fall = -1;
   for (let i = 1; i < hist.length; i++) {
     const e = hist[i].e1rm;
     if (e >= peak * (1 - tol)) {
-      if (fall >= 0) { const ep = recovery(hist, fall, i, peak, lam, bw); if (ep) out.push(ep); fall = -1; }
+      if (fall >= 0) { if (peak >= minPeak) { const ep = recovery(hist, fall, i, tgt, bw); if (ep) out.push(ep); } fall = -1; }
       if (e > peak) peak = e;
     } else if (fall < 0 && e < peak * 0.92) fall = i;
   }
   return out;
 }
 
-function recovery(hist, f, q, P, lam, bw) {
+function recovery(hist, f, q, tgt, bw) {
   let am = f;
   for (let j = f; j < q; j++) if (hist[j].e1rm < hist[am].e1rm) am = j;
-  const tgt = P * lam;
   if (hist[am].e1rm > tgt) return null; // il calo non è mai arrivato al livello di oggi
   const level = tgt - (bw ? Math.max(1, Math.round(tgt * 0.05)) : tgt * 0.05);
   const floor = tgt - (bw ? Math.max(3, Math.round(tgt * 0.12)) : tgt * 0.1);
@@ -314,7 +313,8 @@ export function primeEstimate(hist, today = todayStr()) {
   if (bi === hist.length - 1 || last.e1rm >= best.e1rm * (1 - tol)) return { prime: true, last, best, ratio: Math.min(1, ratio) };
 
   // 1) recuperi reali già avvenuti partendo da questo livello
-  const eps = reattainments(hist, ratio, last.bw).slice(-3);
+  // solo recuperi di un prime paragonabile al record (≥95%) e dal livello assoluto di oggi
+  const eps = reattainments(hist, last.e1rm, last.bw, best.e1rm * 0.95).slice(-3);
   if (eps.length) {
     const days = Math.max(1, Math.round(median(eps.map(e => e.days))));
     const sessions = Math.max(1, Math.round(median(eps.map(e => e.sessions))));

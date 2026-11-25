@@ -165,7 +165,8 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t, s
 
   const periods = useMemo(() => (bands ? trainingPeriods(model.raw) : []), [bands, model]);
   const span = hi - lo || hi * 0.1 || 1;
-  const yDomain = data.length ? [Math.max(0, Math.floor(lo - span * 0.25)), Math.ceil(hi + span * 0.2)] : [0, 100];
+  // più aria sotto e sopra: con scale troppo strette anche un salto da 2,5 kg sembra una parete
+  const yDomain = data.length ? [Math.max(0, Math.floor(lo - Math.max(span * 0.25, hi * 0.25))), Math.ceil(hi + Math.max(span * 0.2, hi * 0.05))] : [0, 100];
   const single = series.length === 1;
   // unità sull'asse: solo se tutte le serie con carico usano la stessa unità
   const axisUnits = [...new Set(series.filter(s => !s.bw).map(s => s.u))];

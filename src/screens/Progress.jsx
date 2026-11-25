@@ -240,7 +240,7 @@ function SummaryCard({ name, color, model, lang, exLang, unit, t }) {
 
 function loadFavs(id) { try { const v = JSON.parse(localStorage.getItem(keyFor(FAV_BASE, id)) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
 
-function ExercisePicker({ list, query, setQuery, selected, colorOf, toggle, favs, toggleFav, exLang, t, onClose }) {
+function ExercisePicker({ list, groups, group, setGroup, query, setQuery, selected, colorOf, toggle, favs, toggleFav, exLang, lang, t, onClose }) {
   React.useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -261,6 +261,16 @@ function ExercisePicker({ list, query, setQuery, selected, colorOf, toggle, favs
           <Icon name="search" size={18} />
           <input className="field" autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder={t('search')} inputMode="search" />
         </div>
+        {groups.length > 1 && (
+          <div className="chips in-sheet" role="group" aria-label="Muscolo">
+            <button className={`chip ${group === null ? 'on' : ''}`} onClick={() => setGroup(null)}>Tutti</button>
+            {groups.map(g => (
+              <button key={g} className={`chip ${group === g ? 'on' : ''}`} aria-pressed={group === g} onClick={() => setGroup(group === g ? null : g)}>
+                <span className="dot" style={{ background: GROUP_COLOR[g] || GROUP_COLOR.Altro }} />{translateGroup(g, lang)}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="sheet-list">
           {list.length === 0 && <div className="muted" style={{ padding: '28px 0', textAlign: 'center' }}>{t('noMatch')}</div>}
           {list.map(e => {
@@ -295,10 +305,17 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
   const [range, setRange] = useState('6m');
   const [bands, setBands] = useState(true);
 
+  const [group, setGroup] = useState(null);
+  const groups = useMemo(() => {
+    const n = new Map();
+    model.exerciseList.forEach(e => n.set(e.group, (n.get(e.group) || 0) + 1));
+    return [...n.entries()].sort((a, b) => b[1] - a[1]).map(([g]) => g);
+  }, [model]);
+
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return model.exerciseList.filter(e => !q || e.name.toLowerCase().includes(q) || translateExercise(e.name, exLang).toLowerCase().includes(q));
-  }, [model, query, exLang]);
+    return model.exerciseList.filter(e => (!group || e.group === group) && (!q || e.name.toLowerCase().includes(q) || translateExercise(e.name, exLang).toLowerCase().includes(q)));
+  }, [model, query, exLang, group]);
 
   const toggleFav = name => setFavs(prev => { const next = prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]; try { localStorage.setItem(keyFor(FAV_BASE, profileId), JSON.stringify(next)); } catch (e) { /* noop */ } setTimeout(touch, 0); return next; });
   // scrollina: preferiti (ordine per frequenza/recenza) + eventuali esercizi selezionati non preferiti
@@ -343,8 +360,8 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
       </div>
 
       {picker && (
-        <ExercisePicker list={list} query={query} setQuery={setQuery} selected={selected} colorOf={colorOf} toggle={toggle}
-          favs={favs} toggleFav={toggleFav} exLang={exLang} lang={lang} t={t} onClose={() => { setPicker(false); setQuery(''); }} />
+        <ExercisePicker list={list} groups={groups} group={group} setGroup={setGroup} query={query} setQuery={setQuery} selected={selected} colorOf={colorOf} toggle={toggle}
+          favs={favs} toggleFav={toggleFav} exLang={exLang} lang={lang} t={t} onClose={() => { setPicker(false); setQuery(''); setGroup(null); }} />
       )}
 
       {primary && heroSum && (

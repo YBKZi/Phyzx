@@ -97,6 +97,7 @@ input[type="file"] { display: none; }
 .seg.small button { padding: 5px 9px; font-size: 12px; }
 
 .chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 14px 2px; margin: 0 -14px; scroll-snap-type: x proximity; scroll-padding: 0 14px; }
+.chips.in-sheet { margin: 0 -16px 6px; padding: 2px 16px; scroll-padding: 0 16px; }
 .chip { flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); font-size: 13px; font-weight: 500; white-space: nowrap; scroll-snap-align: start; transition: background .2s, color .2s; }
 .chip.on { background: #fff; color: #000; font-weight: 600; }
 .chip.on .dot { box-shadow: none; }

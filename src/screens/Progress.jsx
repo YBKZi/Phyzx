@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { translateExercise, translateGroup, GROUP_COLOR, unitFor } from '../lib/core.js';
 import { exerciseSummary, primeEstimate, trainingPeriods, todayStr, addDays, daysBetween } from '../lib/stats.js';
-import { topSetText, makeT, dateShort, dateDay, dateMonthYear, dateMedium, agoLong, durLong, monthYearLong, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
+import { topSetText, makeT, dateShort, dateDay, dateMonthYear, dateMedium, agoLong, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
 import { Card, Label, Stat, Delta, DeltaPill, Hero, CardTitle, CountUp, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
 import PageHeader from '../ui/PageHeader.jsx';
 import { keyFor, FAV_BASE } from '../lib/profiles.js';
@@ -51,17 +51,17 @@ function PrimeCard({ names, model, colorOf, exLang, lang }) {
             {!est.prime && est.noPrecedent && <p className="prime-txt">Questo livello non l'hai mai toccato prima del record, quindi non ho un precedente su cui stimare i tempi.</p>}
             {!est.prime && est.from && (
               <>
-                <div className="prime-eta"><b>~ {durLong(lang, est.days)}</b><span>circa {est.sessions} {est.sessions === 1 ? 'seduta' : 'sedute'} · verso {monthYearLong(lang, est.eta)}</span></div>
+                <div className="prime-eta"><b>~ {est.sessions} {est.sessions === 1 ? 'seduta' : 'sedute'}</b><span>per tornare al prime</span></div>
                 {est.kind === 'reattain' ? (
                   <p className="prime-txt">
                     {est.n === 1
-                      ? <>Il prime l'hai già ripreso una volta partendo da qui: dal {dateMedium(lang, est.from.date)} ci hai messo {durLong(lang, est.days)} e {est.sessions} {est.sessions === 1 ? 'seduta' : 'sedute'}.</>
-                      : <>Le ultime {est.n} volte che hai ripreso il prime partendo da qui ci hai messo in genere {durLong(lang, est.days)} e {est.sessions} {est.sessions === 1 ? 'seduta' : 'sedute'} (l'ultima dal {dateMedium(lang, est.from.date)}).</>}
+                      ? <>Il prime l'hai già ripreso una volta partendo da qui: dal {dateMedium(lang, est.from.date)} ci hai messo {est.sessions} {est.sessions === 1 ? 'seduta' : 'sedute'}.</>
+                      : <>Le ultime {est.n} volte che hai ripreso il prime partendo da qui ci hai messo in genere {est.sessions} {est.sessions === 1 ? 'seduta' : 'sedute'} (l'ultima dal {dateMedium(lang, est.from.date)}).</>}
                   </p>
                 ) : (
                   <p className="prime-txt">
-                    La prima volta, da questo livello al record ci hai messo {durLong(lang, est.firstDays)} e {est.firstSessions} {est.firstSessions === 1 ? 'seduta' : 'sedute'} (dal {dateMedium(lang, est.from.date)}).
-                    Ora il prime l'hai già avuto, {agoLong(lang, est.best.date)}, quindi conto circa il {Math.round(est.factor * 100)}% di quel tempo.
+                    La prima volta, da questo livello al record ci hai messo {est.firstSessions} {est.firstSessions === 1 ? 'seduta' : 'sedute'} (dal {dateMedium(lang, est.from.date)}).
+                    Ora il prime l'hai già avuto, {agoLong(lang, est.best.date)}, quindi conto circa il {Math.round(est.factor * 100)}% di quelle.
                   </p>
                 )}
               </>

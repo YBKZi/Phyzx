@@ -209,6 +209,15 @@ export function exerciseSummary(hist, today = todayStr()) {
 //  2) altrimenti prende il tempo della prima salita al record e lo accorcia in base a quanto
 //     tempo fa hai avuto il prime (da ~45% del tempo se è recente, fino al 100% dopo 2 anni).
 
+// Giorni "di allenamento" tra due sedute: ogni pausa più lunga di 3 settimane conta come 21 giorni,
+// così un periodo di stop non gonfia il tempo che serve per risalire.
+const GAP_CAP = 21;
+function activeDays(hist, i, j) {
+  let d = 0;
+  for (let k = i + 1; k <= j; k++) d += Math.min(GAP_CAP, Math.max(0, daysBetween(hist[k - 1].date, hist[k].date)));
+  return Math.max(1, d);
+}
+
 const median = a => { const v = [...a].sort((x, y) => x - y), m = v.length >> 1; return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
 
 // Un recupero: calo di almeno 8% da un picco P, poi ritorno a ≥ P (−2%). Misura il tratto che parte
@@ -237,10 +246,10 @@ function recovery(hist, f, q, P, lam, bw) {
   let li = -1, below = true;
   for (let j = am; j < q; j++) {
     const e = hist[j].e1rm;
-    if (below && e >= level) { li = j; below = false; } else if (e < floor) below = true;
+    if (below && e >= level) { li = j; below = false; } else if (e < floor) { below = true; li = -1; }
   }
-  if (li < 0) return null;
-  return { from: hist[li], to: hist[q], days: Math.max(1, daysBetween(hist[li].date, hist[q].date)), sessions: q - li };
+  if (li < 0) return null; // la risalita è arrivata con un salto, senza passare dal livello di oggi
+  return { from: hist[li], to: hist[q], days: activeDays(hist, li, q), sessions: q - li };
 }
 
 export function primeEstimate(hist, today = todayStr()) {
@@ -259,7 +268,7 @@ export function primeEstimate(hist, today = todayStr()) {
   if (eps.length) {
     const days = Math.max(1, Math.round(median(eps.map(e => e.days))));
     const sessions = Math.max(1, Math.round(median(eps.map(e => e.sessions))));
-    return { prime: false, kind: 'reattain', last, best, ratio, n: eps.length, from: eps[eps.length - 1].from, days, sessions, eta: addDays(today, days) };
+    return { prime: false, kind: 'reattain', last, best, ratio, n: eps.length, from: eps[eps.length - 1].from, days, sessions };
   }
 
   // 2) prima salita al record, accorciata perché il prime è già stato avuto
@@ -269,15 +278,15 @@ export function primeEstimate(hist, today = todayStr()) {
   let li = -1, below = true;
   for (let i = 0; i < bi; i++) {
     const e = hist[i].e1rm;
-    if (below && e >= level) { li = i; below = false; } else if (e < floor) below = true;
+    if (below && e >= level) { li = i; below = false; } else if (e < floor) { below = true; li = -1; }
   }
   if (li < 0) return { prime: false, last, best, ratio, noPrecedent: true };
   const from = hist[li];
-  const firstDays = Math.max(1, daysBetween(from.date, best.date)), firstSessions = bi - li;
+  const firstDays = activeDays(hist, li, bi), firstSessions = bi - li;
   const age = Math.max(0, daysBetween(best.date, today));
   const factor = 0.45 + 0.55 * Math.min(1, age / 730);
   const days = Math.max(1, Math.round(firstDays * factor)), sessions = Math.max(1, Math.round(firstSessions * factor));
-  return { prime: false, kind: 'model', last, best, ratio, from, days, sessions, eta: addDays(today, days), firstDays, firstSessions, factor, age };
+  return { prime: false, kind: 'model', last, best, ratio, from, days, sessions, firstDays, firstSessions, factor, age };
 }
 
 export const trainingPeriods = raw => analyzeTrainingPeriods(raw);

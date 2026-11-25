@@ -218,6 +218,14 @@ function activeDays(hist, i, j) {
   return Math.max(1, d);
 }
 
+// Tra le sedute della risalita [i0, i1) sceglie quella più vicina al livello di oggi
+// (a parità la prima): se in passato hai fatto proprio la stessa prestazione, è quella.
+function closestIdx(hist, i0, i1, target) {
+  let c = i0;
+  for (let k = i0 + 1; k < i1; k++) if (Math.abs(hist[k].e1rm - target) < Math.abs(hist[c].e1rm - target) - 1e-9) c = k;
+  return c;
+}
+
 const median = a => { const v = [...a].sort((x, y) => x - y), m = v.length >> 1; return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
 
 // Un recupero: calo di almeno 8% da un picco P, poi ritorno a ≥ P (−2%). Misura il tratto che parte
@@ -249,6 +257,7 @@ function recovery(hist, f, q, P, lam, bw) {
     if (below && e >= level) { li = j; below = false; } else if (e < floor) { below = true; li = -1; }
   }
   if (li < 0) return null; // la risalita è arrivata con un salto, senza passare dal livello di oggi
+  li = closestIdx(hist, li, q, tgt);
   return { from: hist[li], to: hist[q], days: activeDays(hist, li, q), sessions: q - li };
 }
 
@@ -281,6 +290,7 @@ export function primeEstimate(hist, today = todayStr()) {
     if (below && e >= level) { li = i; below = false; } else if (e < floor) { below = true; li = -1; }
   }
   if (li < 0) return { prime: false, last, best, ratio, noPrecedent: true };
+  li = closestIdx(hist, li, bi, last.e1rm);
   const from = hist[li];
   const firstDays = activeDays(hist, li, bi), firstSessions = bi - li;
   const age = Math.max(0, daysBetween(best.date, today));

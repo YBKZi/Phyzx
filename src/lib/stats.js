@@ -65,6 +65,19 @@ export function fixRaw(profileId, raw) {
   });
 }
 
+// Correzioni fisse per un profilo: i carichi del cavo (Cable Lateral Raise) di Emanuele sono stati
+// registrati in libbre ma sono i numeri del cavo, cioè kg. Si applica solo quando il modello viene
+// costruito: i dati salvati restano quelli del CSV, quindi un nuovo import non le disfa.
+const CABLE_FIX = [[3.402, 7.5], [3.515, 7.5], [4.536, 10], [5.67, 12.5], [6.804, 15]];
+export function profileFixes(profileId, rows) {
+  if (profileId !== 'main') return rows;
+  return rows.map(r => {
+    if (r[1] !== 'Cable Lateral Raise') return r;
+    const hit = CABLE_FIX.find(([from]) => Math.abs(r[3] - from) <= 0.06);
+    return hit ? [r[0], r[1], r[2], hit[1], r[4]] : r;
+  });
+}
+
 // Import che sostituisce: il CSV di Liftoff è lo storico completo, quindi per ogni giorno presente nel file
 // le righe già salvate vengono rimpiazzate (così modifiche ai carichi, serie cancellate e CSV con
 // precisioni diverse non lasciano righe doppie o vecchie). I giorni assenti dal file restano intatti.

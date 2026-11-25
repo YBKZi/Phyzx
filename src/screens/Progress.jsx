@@ -4,7 +4,7 @@ import { translateExercise, translateGroup, GROUP_COLOR, unitFor } from '../lib/
 import { exerciseSummary, trainingPeriods, todayStr, addDays } from '../lib/stats.js';
 import { topSetText, makeT, dateShort, dateDay, dateMonthYear, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
 import { Card, Label, Stat, Delta, DeltaPill, Hero, CardTitle, CountUp, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
-import { ProfileButton } from '../ui/Profiles.jsx';
+import PageHeader from '../ui/PageHeader.jsx';
 import { keyFor, FAV_BASE } from '../lib/profiles.js';
 import { touch } from '../lib/sync.js';
 
@@ -266,17 +266,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
 
   return (
     <div className="screen">
-      <div className="row between">
-        <h1 className="h1">{t('progress')}</h1>
-        <div className="head-actions">
-          <label className={`import-btn ${importing ? 'off' : ''}`} aria-label={t('importTitle')}>
-            <Icon name="upload" size={16} stroke={2.4} />{importing ? t('importing') : t('importShort')}
-            <input type="file" accept=".csv,text/csv" disabled={importing} onChange={e => { const f = e.target.files[0]; e.target.value = ''; if (f) onFile(f); }} />
-          </label>
-          {profile && <ProfileButton profile={profile} onClick={onProfiles} />}
-        </div>
-      </div>
-      {msg && <div className={`msg ${msg.ok ? 'ok' : 'err'}`}>{msg.text}</div>}
+      <PageHeader title={t('progress')} t={t} onFile={onFile} importing={importing} msg={msg} profile={profile} onProfiles={onProfiles} />
 
       <div style={{ display: 'grid', gap: 8 }}>
         <button className="search search-btn" onClick={() => setPicker(true)} aria-haspopup="dialog">

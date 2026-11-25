@@ -3,6 +3,7 @@ import { translateExercise, translateGroup, GROUP_COLOR } from '../lib/core.js';
 import { weeklyCounts, heatmap, weekStreak, groupSetsBetween, addDays, daysBetween, todayStr } from '../lib/stats.js';
 import { topSetText, makeT, dateDay, dateWeekday, relativeDay, num } from '../lib/i18n.js';
 import { Card, Label, Stat, Delta, Hero, CardTitle, CountUp, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
+import PageHeader from '../ui/PageHeader.jsx';
 
 const gColor = g => (GROUP_COLOR[g] && !GROUP_COLOR[g].startsWith('var') ? GROUP_COLOR[g] : COLORS.flat);
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
@@ -145,7 +146,7 @@ function WorkoutRow({ wk, lang, exLang, unit, t, open, onToggle }) {
   );
 }
 
-export default function Recent({ model, lang, exLang, unit }) {
+export default function Recent({ model, lang, exLang, unit, onFile, importing, msg, profile, onProfiles }) {
   const t = makeT(lang);
   const today = todayStr();
   const [open, setOpen] = useState(null);
@@ -158,7 +159,7 @@ export default function Recent({ model, lang, exLang, unit }) {
 
   return (
     <div className="screen">
-      <h1 className="h1">{t('navRecent')}</h1>
+      <PageHeader title={t('navRecent')} t={t} onFile={onFile} importing={importing} msg={msg} profile={profile} onProfiles={onProfiles} />
 
       <Hero tone="green" eyebrow="Allenamenti · ultimi 30 giorni" tag={`${streak} sett. di fila`} value={<CountUp to={last30.length} />}
         pills={<span className="dpill">{num(avg, 1)} a settimana · 12 sett.</span>}

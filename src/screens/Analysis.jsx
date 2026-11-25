@@ -4,6 +4,8 @@ import { todayStr } from '../lib/stats.js';
 import { buildAnalysis } from '../lib/analytics.js';
 import { dateShort, dateDay, wu, num, pct } from '../lib/i18n.js';
 import { Card, Label, Stat, Delta, DeltaPill, Hero, CardTitle, Ring, CountUp, PRBadge, Donut, Segmented, COLORS } from '../ui/kit.jsx';
+import PageHeader from '../ui/PageHeader.jsx';
+import { makeT } from '../lib/i18n.js';
 
 const gColor = g => GROUP_COLOR[g] || COLORS.flat;
 const MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
@@ -91,9 +93,10 @@ function Row({ left, right, sub }) {
 
 const fmtSpan = days => (days >= 365 ? `${num(days / 365, 1)} anni` : days >= 60 ? `${Math.round(days / 30.4)} mesi` : `${days} giorni`);
 
-export default function Analysis({ model, unit }) {
+export default function Analysis({ model, unit, onFile, importing, msg, profile, onProfiles }) {
   const [recRange, setRecRange] = useState('12m');
   const [monRange, setMonRange] = useState('12m');
+  const t = makeT('it');
   const a = useMemo(() => buildAnalysis(model, todayStr()), [model]);
   if (!a) return null;
   const { overview: o, consistency: c, balance: b } = a;
@@ -103,7 +106,7 @@ export default function Analysis({ model, unit }) {
 
   return (
     <div className="screen">
-      <h1 className="h1">Analisi</h1>
+      <PageHeader title="Analisi" t={t} onFile={onFile} importing={importing} msg={msg} profile={profile} onProfiles={onProfiles} />
 
       <Hero tone="violet" eyebrow="Allenamenti totali" tag={`da ${fmtSpan(o.spanDays)}`} value={<CountUp to={o.workouts} />}
         pills={<><span className="dpill">{num(o.perWeek, 1)} a settimana</span><span className="dpill">{a.records.total} record</span></>}

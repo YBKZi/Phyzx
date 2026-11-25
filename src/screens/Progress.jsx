@@ -118,6 +118,9 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
   const uOf = unitsFor(selected, unit);
   const series = selected.map((name, i) => ({ u: uOf(name), name, label: translateExercise(name, exLang), color: COLORS.series[i % COLORS.series.length], bw: model.history[name][0].bw && model.history[name].every(s => s.bw) }));
 
+  // Punto "ultima volta a questo livello" di ogni esercizio (lo stesso usato dalla stima del prime)
+  const levelTs = useMemo(() => Object.fromEntries(selected.map(n => [n, primeEstimate(model.history[n], today)?.from?.ts ?? null])), [selected, model, today]);
+
   const firstDate = useMemo(() => selected.reduce((m, n) => { const d = model.history[n][0].date; return !m || d < m ? d : m; }, null), [selected, model]);
   const rangeStart = RANGES[range] == null ? firstDate : addDays(today, -RANGES[range]);
   const startDate = rangeStart < firstDate ? firstDate : rangeStart;
@@ -134,13 +137,14 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
         const row = byTs.get(p.ts);
         row[s.name] = v;
         row[`${s.name}__pr`] = p.isPR;
+        row[`${s.name}__lvl`] = levelTs[s.name] != null && p.ts === levelTs[s.name];
         row[`${s.name}__delta`] = p.deltaPct;
         row[`${s.name}__d`] = p.bw ? `${p.topReps} ${t('reps')}` : `${wu(p.topKg, s.u)} × ${p.topReps}`;
         lo = Math.min(lo, v); hi = Math.max(hi, v);
       });
     });
     return { data: [...byTs.values()].sort((a, b) => a.ts - b.ts), lo, hi };
-  }, [selected, model, unit, d0, d1]);
+  }, [selected, model, unit, d0, d1, levelTs]);
 
   const periods = useMemo(() => (bands ? trainingPeriods(model.raw) : []), [bands, model]);
   const span = hi - lo || hi * 0.1 || 1;
@@ -202,7 +206,9 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
           {series.map(s => (
             <Area key={s.name} type="monotone" dataKey={s.name} stroke={strokes[s.name].stops.length ? `url(#${strokes[s.name].id})` : s.color} strokeWidth={2.6} fill={`url(#ar-${s.color.slice(1)})`}
               connectNulls isAnimationActive animationDuration={900} animationEasing="ease-out"
-              dot={p => (p.payload[`${s.name}__pr`]
+              dot={p => (p.payload[`${s.name}__lvl`]
+                ? <g key={`${s.name}-${p.index}`}><circle cx={p.cx} cy={p.cy} r="11" fill="#FFFFFF" fillOpacity="0.16" /><circle cx={p.cx} cy={p.cy} r="5.5" fill={s.color} stroke="#FFFFFF" strokeWidth="2.4" /></g>
+                : p.payload[`${s.name}__pr`]
                 ? <circle key={`${s.name}-${p.index}`} cx={p.cx} cy={p.cy} r="4" fill="#FFC439" stroke="#000000" strokeWidth="1.5" />
                 : <circle key={`${s.name}-${p.index}`} cx={p.cx} cy={p.cy} r="2" fill={s.color} />)}
               activeDot={{ r: 5, stroke: '#000000', strokeWidth: 2, fill: s.color }} />
@@ -334,6 +340,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
   const hist = primary ? model.history[primary] : [];
   const heroSum = primary ? exerciseSummary(model.history[primary]) : null;
   const heroU = primary ? unitFor(primary, unit) : unit;
+  const hasLevel = selected.some(n => primeEstimate(model.history[n])?.from);
 
   return (
     <div className="screen">
@@ -391,6 +398,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
               <span><i className="dot" style={{ background: COLORS.warn, opacity: .8 }} />{t('legendPause')}</span>
               <span><i className="dot" style={{ background: COLORS.down, opacity: .8 }} />{t('legendStop')}</span>
               <span><i className="dot" style={{ background: '#FFC439' }} />{t('record')}</span>
+              {hasLevel && <span><i className="dot ring" />Stesso livello di oggi</span>}
             </div>
             <button className="pill" onClick={() => setBands(b => !b)} style={{ color: bands ? COLORS.accent : undefined, background: bands ? 'rgba(47,140,255,.16)' : undefined }}>{bands ? t('bandsOn') : t('bandsOff')}</button>
           </div>

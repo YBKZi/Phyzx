@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { translateExercise, translateGroup, GROUP_COLOR, unitFor } from '../lib/core.js';
-import { exerciseSummary, primeEstimate, trainingPeriods, todayStr, addDays } from '../lib/stats.js';
+import { exerciseSummary, primeEstimate, trainingPeriods, todayStr, addDays, daysBetween } from '../lib/stats.js';
 import { topSetText, makeT, dateShort, dateDay, dateMonthYear, dateMedium, agoLong, durLong, monthYearLong, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
 import { Card, Label, Stat, Delta, DeltaPill, Hero, CardTitle, CountUp, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
 import PageHeader from '../ui/PageHeader.jsx';
@@ -113,8 +113,10 @@ function Crosshair({ points, top, height, left, width, payload, domain }) {
   );
 }
 
-function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t }) {
+function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t, shift = 0, setShift }) {
   const today = todayStr();
+  const dragRef = React.useRef(null);
+  const [dragging, setDragging] = useState(false);
   const uOf = unitsFor(selected, unit);
   const series = selected.map((name, i) => ({ u: uOf(name), name, label: translateExercise(name, exLang), color: COLORS.series[i % COLORS.series.length], bw: model.history[name][0].bw && model.history[name].every(s => s.bw) }));
 
@@ -122,9 +124,13 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
   const levelTs = useMemo(() => Object.fromEntries(selected.map(n => [n, primeEstimate(model.history[n], today)?.from?.ts ?? null])), [selected, model, today]);
 
   const firstDate = useMemo(() => selected.reduce((m, n) => { const d = model.history[n][0].date; return !m || d < m ? d : m; }, null), [selected, model]);
-  const rangeStart = RANGES[range] == null ? firstDate : addDays(today, -RANGES[range]);
-  const startDate = rangeStart < firstDate ? firstDate : rangeStart;
-  const d0 = dayMs(startDate), d1 = dayMs(today);
+  const W = RANGES[range];
+  // Si può scorrere indietro nel tempo finché la finestra resta dentro la storia disponibile
+  const maxShift = W ? Math.max(0, daysBetween(firstDate, today) - W) : 0;
+  const sh = Math.max(0, Math.min(shift, maxShift));
+  const endStr = addDays(today, -sh);
+  const startDate = W == null ? firstDate : (addDays(endStr, -W) < firstDate ? firstDate : addDays(endStr, -W));
+  const d0 = dayMs(startDate), d1 = dayMs(endStr);
 
   const { data, lo, hi } = useMemo(() => {
     const byTs = new Map();
@@ -173,8 +179,29 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
     return [s.name, { id: `ln-${s.color.slice(1)}`, stops }];
   }));
 
+  const step = Math.max(7, Math.round((W || 0) / 2));
+  const onDown = e => { if (!W || !maxShift) return; dragRef.current = { x: e.clientX, s0: sh, moved: false, w: e.currentTarget.getBoundingClientRect().width }; };
+  const onMove = e => {
+    const d = dragRef.current; if (!d) return;
+    const dx = e.clientX - d.x;
+    if (!d.moved && Math.abs(dx) < 8) return;
+    if (!d.moved) { d.moved = true; setDragging(true); try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { /* noop */ } }
+    setShift(Math.max(0, Math.min(maxShift, d.s0 + Math.round((dx / d.w) * W))));
+  };
+  const onUp = () => { dragRef.current = null; setDragging(false); };
+
   return (
-    <div className="chart-glow" style={{ width: '100%', height: 220, marginLeft: -10, '--glow': `${series[0].color}99` }}>
+    <>
+    {W != null && maxShift > 0 && (
+      <div className="chart-nav">
+        <button className="nav-btn back" aria-label="Indietro nel tempo" disabled={sh >= maxShift} onClick={() => setShift(Math.min(maxShift, sh + step))}><Icon name="chevron" size={16} stroke={2.4} /></button>
+        <span className="nav-label">{dateMedium(lang, startDate)} – {dateMedium(lang, endStr)}</span>
+        {sh > 0 && <button className="nav-today" onClick={() => setShift(0)}>Oggi</button>}
+        <button className="nav-btn" aria-label="Avanti nel tempo" disabled={sh <= 0} onClick={() => setShift(Math.max(0, sh - step))}><Icon name="chevron" size={16} stroke={2.4} /></button>
+      </div>
+    )}
+    <div className="chart-glow" style={{ width: '100%', height: 220, marginLeft: -10, '--glow': `${series[0].color}99`, touchAction: W && maxShift ? 'pan-y' : undefined, cursor: dragging ? 'grabbing' : undefined }}
+      onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>
@@ -202,10 +229,10 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
           <XAxis dataKey="ts" type="number" scale="time" domain={[d0, d1]} tickCount={range === 'all' || range === '1y' ? 4 : 5} minTickGap={34} tickFormatter={ts => (range === '1m' || range === '3m' ? dateDay(lang, new Date(ts).toISOString().slice(0, 10)) : range === '6m' ? dateMonthYear(lang, ts).split(' ')[0] : dateMonthYear(lang, ts))}
             axisLine={false} tickLine={false} tickMargin={8} allowDataOverflow />
           <YAxis domain={yDomain} width={axisUnit ? 58 : 44} tickFormatter={v => (axisUnit ? `${v} ${axisUnit}` : v)} axisLine={false} tickLine={false} tickCount={5} allowDataOverflow />
-          <Tooltip cursor={<Crosshair domain={yDomain} />} content={<ChartTip series={series} unit={unit} lang={lang} />} />
+          <Tooltip active={dragging ? false : undefined} cursor={<Crosshair domain={yDomain} />} content={<ChartTip series={series} unit={unit} lang={lang} />} />
           {series.map(s => (
             <Area key={s.name} type="monotone" dataKey={s.name} stroke={strokes[s.name].stops.length ? `url(#${strokes[s.name].id})` : s.color} strokeWidth={2.6} fill={`url(#ar-${s.color.slice(1)})`}
-              connectNulls isAnimationActive animationDuration={900} animationEasing="ease-out"
+              connectNulls isAnimationActive={sh === 0 && !dragging} animationDuration={900} animationEasing="ease-out"
               dot={p => (p.payload[`${s.name}__lvl`]
                 ? <g key={`${s.name}-${p.index}`}><circle cx={p.cx} cy={p.cy} r="11" fill="#FFFFFF" fillOpacity="0.16" /><circle cx={p.cx} cy={p.cy} r="5.5" fill={s.color} stroke="#FFFFFF" strokeWidth="2.4" /></g>
                 : p.payload[`${s.name}__pr`]
@@ -216,6 +243,7 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
         </ComposedChart>
       </ResponsiveContainer>
     </div>
+    </>
   );
 }
 
@@ -308,7 +336,9 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
   const [query, setQuery] = useState('');
   const [picker, setPicker] = useState(false);
   const [favs, setFavs] = useState(() => loadFavs(profileId));
-  const [range, setRange] = useState('6m');
+  const [range, setRangeRaw] = useState('6m');
+  const [shift, setShift] = useState(0);
+  const setRange = r => { setRangeRaw(r); setShift(0); };
   const [bands, setBands] = useState(true);
 
   const [group, setGroup] = useState(null);
@@ -390,7 +420,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
               { value: '1y', label: t('range1y') }, { value: 'all', label: t('rangeAll') },
             ]} />
           </div>
-          <ProgressChart model={model} selected={selected} lang={lang} exLang={exLang} unit={unit} range={range} bands={bands} t={t} />
+          <ProgressChart model={model} selected={selected} lang={lang} exLang={exLang} unit={unit} range={range} bands={bands} t={t} shift={shift} setShift={setShift} />
           <div className="hr" />
           <div className="row between" style={{ alignItems: 'flex-start', gap: 12 }}>
             <div className="legend">

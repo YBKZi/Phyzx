@@ -18,7 +18,9 @@ export function ProfileButton({ profile, onClick }) {
   );
 }
 
-export function ProfileSheet({ profiles, activeId, onSwitch, onAdd, onRename, onDelete, onClose }) {
+const SYNC_TXT = { ok: ['Sincronizzato su tutti i dispositivi', '#1FD17A'], syncing: ['Sincronizzazione…', '#FFC439'], pending: ['Sincronizzazione…', '#FFC439'], offline: ['Non sincronizzato: sei offline', '#FF7A59'] };
+
+export function ProfileSheet({ profiles, activeId, onSwitch, onAdd, onRename, onDelete, sync = 'ok', onClose }) {
   const [editing, setEditing] = useState(null);   // { id, value }
   const [confirm, setConfirm] = useState(null);   // id da eliminare
   const [name, setName] = useState('');
@@ -45,7 +47,8 @@ export function ProfileSheet({ profiles, activeId, onSwitch, onAdd, onRename, on
           <h2 className="sheet-title">Profili</h2>
           <button className="btn sheet-done" style={{ width: 'auto', padding: '9px 20px' }} onClick={onClose}>Fatto</button>
         </div>
-        <div className="sheet-sub">I dati di ogni persona restano separati, solo su questo telefono.</div>
+        <div className="sheet-sub">I dati di ogni persona restano separati.</div>
+        {SYNC_TXT[sync] && <div className="sync-line"><i style={{ background: SYNC_TXT[sync][1] }} />{SYNC_TXT[sync][0]}</div>}
 
         <div className="sheet-list" style={{ flex: 'none' }}>
           {profiles.map(p => {

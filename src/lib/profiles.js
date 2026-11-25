@@ -19,7 +19,7 @@ export function loadProfiles() {
     const v = JSON.parse(get(PROFILES_KEY) || 'null');
     if (Array.isArray(v) && v.length && v.every(p => p && p.id && p.name)) return v;
   } catch (e) { /* ripartiamo dal profilo base */ }
-  return [{ id: 'main', name: 'Io', color: PROFILE_COLORS[0] }];
+  return [{ id: 'main', name: 'Io', color: PROFILE_COLORS[0], u: 0 }];
 }
 export const saveProfiles = list => set(PROFILES_KEY, JSON.stringify(list));
 
@@ -38,7 +38,7 @@ export function newProfile(list, name) {
   const id = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
   const used = new Set(list.map(p => p.color));
   const color = PROFILE_COLORS.find(c => !used.has(c)) || PROFILE_COLORS[list.length % PROFILE_COLORS.length];
-  return { id, name: cleanName(name, `Profilo ${list.length + 1}`), color };
+  return { id, name: cleanName(name, `Profilo ${list.length + 1}`), color, u: Date.now() };
 }
 
 // numero di allenamenti (giorni distinti) salvati per un profilo

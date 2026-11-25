@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Papa from 'papaparse';
 import logo from './assets/phyzx-icon.png';
 import { WORKOUT_DATA_KEY, UNITS_KEY } from './lib/core.js';
@@ -7,6 +7,8 @@ import { makeT } from './lib/i18n.js';
 import { Icon, DockIcon, Label } from './ui/kit.jsx';
 import { ProfileButton, ProfileSheet } from './ui/Profiles.jsx';
 import { keyFor, loadProfiles, saveProfiles, loadActive, saveActive, newProfile, cleanName, wipeProfileData } from './lib/profiles.js';
+import { readKeyFromUrl, storedKey, storeKey, clearKey, verifyKey, resetLocal, syncNow, touch, addDeleted, setSyncListener } from './lib/sync.js';
+import { NotFound, Offline } from './ui/NotFound.jsx';
 import Recent from './screens/Recent.jsx';
 import Analysis from './screens/Analysis.jsx';
 import Progress from './screens/Progress.jsx';
@@ -71,11 +73,15 @@ function FirstUpload({ onFile, importing, msg, t, profile, multi, onProfiles }) 
   );
 }
 
-export default function App() {
+function Main({ syncKey, onInvalid }) {
   const [profiles, setProfiles] = useState(loadProfiles);
   const [activeId, setActiveId] = useState(() => loadActive(loadProfiles()));
   const [raw, setRaw] = useState(() => loadRaw(loadActive(loadProfiles())));
   const [profOpen, setProfOpen] = useState(false);
+  const [rev, setRev] = useState(0);
+  const [syncState, setSyncState] = useState('syncing');
+  const activeRef = useRef(activeId);
+  activeRef.current = activeId;
   const profile = profiles.find(p => p.id === activeId) || profiles[0];
   const lang = 'it';
   const exLang = 'en';
@@ -92,6 +98,31 @@ export default function App() {
   useEffect(() => { const f = () => setScrolled(window.scrollY > 90); f(); window.addEventListener('scroll', f, { passive: true }); return () => window.removeEventListener('scroll', f); }, []);
   const go = next => { try { navigator.vibrate && navigator.vibrate(8); } catch (e) { /* noop */ } setTab(next); setMsg(null); try { window.scrollTo(0, 0); } catch (e) { /* noop */ } };
 
+  // ricarica lo stato dopo che la sincronizzazione ha cambiato i dati locali
+  const reload = () => {
+    const list = loadProfiles();
+    const id = list.some(p => p.id === activeRef.current) ? activeRef.current : list[0].id;
+    saveActive(id); setProfiles(list); setActiveId(id); setRaw(loadRaw(id)); setRev(r => r + 1);
+  };
+  const runSync = async () => {
+    setSyncState('syncing');
+    const r = await syncNow(syncKey);
+    if (r.status === 'invalid') { onInvalid(); return; }
+    setSyncState(r.status === 'ok' ? 'ok' : 'offline');
+    if (r.changed) reload();
+  };
+  useEffect(() => {
+    setSyncListener(ev => {
+      if (ev.state === 'invalid') { onInvalid(); return; }
+      setSyncState(ev.state);
+      if (ev.changed) reload();
+    });
+    runSync();
+    const vis = () => { if (document.visibilityState === 'visible') runSync(); };
+    document.addEventListener('visibilitychange', vis);
+    return () => { document.removeEventListener('visibilitychange', vis); setSyncListener(null); };
+  }, []);
+
   const switchTo = (id, list = profiles) => {
     saveActive(id); setActiveId(id); setRaw(loadRaw(id)); setTab('progress'); setMsg(null);
     try { window.scrollTo(0, 0); } catch (e) { /* noop */ }
@@ -100,18 +131,23 @@ export default function App() {
   const addProfile = name => {
     const p = newProfile(profiles, name);
     const next = [...profiles, p];
-    saveProfiles(next); setProfiles(next); switchTo(p.id);
+    saveProfiles(next); setProfiles(next); switchTo(p.id); touch();
   };
   const renameProfile = (id, name) => {
-    const next = profiles.map(p => (p.id === id ? { ...p, name: cleanName(name, p.name) } : p));
-    saveProfiles(next); setProfiles(next);
+    const next = profiles.map(p => (p.id === id ? { ...p, name: cleanName(name, p.name), u: Date.now() } : p));
+    saveProfiles(next); setProfiles(next); touch();
   };
   const deleteProfile = id => {
     wipeProfileData(id);
-    if (profiles.length === 1) { setRaw([]); setMsg(null); return; }   // l'ultimo profilo resta, ma vuoto
+    addDeleted(id);                                   // lapide: così la cancellazione arriva anche agli altri dispositivi
+    if (profiles.length === 1) {                      // l'ultimo profilo resta, ma vuoto (nuovo id)
+      const fresh = { ...newProfile([], profile.name), color: profile.color };
+      saveProfiles([fresh]); setProfiles([fresh]); switchTo(fresh.id); touch(); return;
+    }
     const next = profiles.filter(p => p.id !== id);
     saveProfiles(next); setProfiles(next);
     if (id === activeId) switchTo(next[0].id);
+    touch();
   };
 
   async function onFile(file) {
@@ -124,6 +160,7 @@ export default function App() {
       write(MIGRATION_KEY, '1');
       setRaw(merged);
       setMsg({ ok: true, text: t('imported')(added, n) });
+      touch();
     } catch (e) {
       setMsg({ ok: false, text: t('importError') });
     } finally { setImporting(false); }
@@ -131,10 +168,10 @@ export default function App() {
 
   const sheet = profOpen && (
     <ProfileSheet profiles={profiles} activeId={activeId} onSwitch={id => switchTo(id)} onAdd={addProfile}
-      onRename={renameProfile} onDelete={deleteProfile} onClose={() => setProfOpen(false)} />
+      onRename={renameProfile} onDelete={deleteProfile} sync={syncState} onClose={() => setProfOpen(false)} />
   );
 
-  if (!raw.length) return <><FirstUpload key={activeId} onFile={onFile} importing={importing} msg={msg} t={t} profile={profile} multi={profiles.length > 1} onProfiles={() => setProfOpen(true)} />{sheet}</>;
+  if (!raw.length) return <><FirstUpload key={`${activeId}-${rev}`} onFile={onFile} importing={importing} msg={msg} t={t} profile={profile} multi={profiles.length > 1} onProfiles={() => setProfOpen(true)} />{sheet}</>;
 
   const props = { model, lang, exLang, unit, onFile, importing, msg, profile, profileId: activeId, onProfiles: () => setProfOpen(true) };
   const items = [
@@ -147,9 +184,9 @@ export default function App() {
     <>
       <div className={`topbar ${scrolled ? 'on' : ''}`} aria-hidden="true">{items.find(i => i.key === tab).label}</div>
       <div className="app">
-        {tab === 'recent' && <Recent key={`recent-${activeId}`} {...props} />}
-        {tab === 'progress' && <Progress key={`progress-${activeId}`} {...props} />}
-        {tab === 'analysis' && <Analysis key={`analysis-${activeId}`} {...props} />}
+        {tab === 'recent' && <Recent key={`recent-${activeId}-${rev}`} {...props} />}
+        {tab === 'progress' && <Progress key={`progress-${activeId}-${rev}`} {...props} />}
+        {tab === 'analysis' && <Analysis key={`analysis-${activeId}-${rev}`} {...props} />}
       </div>
       <nav className="dock" aria-label="Navigazione">
         <div className="dock-in">
@@ -164,4 +201,32 @@ export default function App() {
       {sheet}
     </>
   );
+}
+
+// Accesso: senza una chiave valida l'app mostra una normale pagina 404.
+export default function App() {
+  const [gate, setGate] = useState(() => {
+    const urlKey = readKeyFromUrl();
+    const stored = storedKey();
+    if (urlKey) return { state: 'checking', key: urlKey, prev: stored };
+    if (stored) return { state: 'ok', key: stored };
+    return { state: 'denied' };
+  });
+  useEffect(() => {
+    if (gate.state !== 'checking') return;
+    (async () => {
+      const v = await verifyKey(gate.key);
+      if (v === 'ok') {
+        if (gate.prev && gate.prev !== gate.key) resetLocal();   // altra chiave su questo browser: niente mescolanze
+        storeKey(gate.key);
+        setGate({ state: 'ok', key: gate.key });
+      } else setGate({ state: v === 'offline' ? 'offline' : 'denied' });
+    })();
+  }, []);
+  useEffect(() => { document.title = gate.state === 'denied' ? '404 · Pagina non trovata' : 'Phyzx'; }, [gate.state]);
+
+  if (gate.state === 'denied') return <NotFound />;
+  if (gate.state === 'offline') return <Offline />;
+  if (gate.state === 'checking') return <div style={{ minHeight: '100dvh', background: '#000' }} />;
+  return <Main syncKey={gate.key} onInvalid={() => { clearKey(); setGate({ state: 'denied' }); }} />;
 }

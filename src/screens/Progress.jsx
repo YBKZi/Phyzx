@@ -6,6 +6,7 @@ import { topSetText, makeT, dateShort, dateDay, dateMonthYear, wu, wv, unitLabel
 import { Card, Label, Stat, Delta, DeltaPill, Hero, CardTitle, CountUp, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
 import { ProfileButton } from '../ui/Profiles.jsx';
 import { keyFor, FAV_BASE } from '../lib/profiles.js';
+import { touch } from '../lib/sync.js';
 
 // Unità di ogni esercizio sul grafico: se se ne mescolano due, tutto in kg (libbre convertite)
 const unitsFor = (names, unit) => {
@@ -245,7 +246,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
     return model.exerciseList.filter(e => !q || e.name.toLowerCase().includes(q) || translateExercise(e.name, exLang).toLowerCase().includes(q));
   }, [model, query, exLang]);
 
-  const toggleFav = name => setFavs(prev => { const next = prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]; try { localStorage.setItem(keyFor(FAV_BASE, profileId), JSON.stringify(next)); } catch (e) { /* noop */ } return next; });
+  const toggleFav = name => setFavs(prev => { const next = prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]; try { localStorage.setItem(keyFor(FAV_BASE, profileId), JSON.stringify(next)); } catch (e) { /* noop */ } setTimeout(touch, 0); return next; });
   // scrollina: preferiti (ordine per frequenza/recenza) + eventuali esercizi selezionati non preferiti
   const chipList = useMemo(() => {
     const byName = new Map(model.exerciseList.map(e => [e.name, e]));

@@ -94,6 +94,20 @@ export function agoLong(lang, s, today = todayStr()) {
   return it ? `${ys} e ${ms} fa` : `${ys} ${m ? 'and ' + ms : ''} ago`;
 }
 
+// Durata leggibile: "12 giorni", "5 mesi", "1 anno e 2 mesi"
+export function durLong(lang, n) {
+  const it = lang !== 'en';
+  if (n < 45) return it ? `${n} ${n === 1 ? 'giorno' : 'giorni'}` : `${n} ${n === 1 ? 'day' : 'days'}`;
+  const months = Math.round(n / 30.44);
+  if (months < 12) return it ? `${months} mesi` : `${months} months`;
+  const y = Math.floor(months / 12), m = months % 12;
+  const ys = it ? (y === 1 ? '1 anno' : `${y} anni`) : (y === 1 ? '1 year' : `${y} years`);
+  if (!m) return ys;
+  const ms = it ? (m === 1 ? '1 mese' : `${m} mesi`) : (m === 1 ? '1 month' : `${m} months`);
+  return `${ys}${it ? ' e ' : ' and '}${ms}`;
+}
+export const monthYearLong = (lang, s) => fmt(lang, { month: 'long', year: 'numeric' }).format(asDate(s));
+
 export function relativeDay(lang, s, today = todayStr()) {
   const t = makeT(lang);
   const n = daysBetween(s, today);

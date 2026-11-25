@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { translateExercise, translateGroup, GROUP_COLOR, unitFor } from '../lib/core.js';
-import { exerciseSummary, trainingPeriods, todayStr, addDays } from '../lib/stats.js';
-import { topSetText, makeT, dateShort, dateDay, dateMonthYear, dateMedium, agoLong, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
+import { exerciseSummary, primeEstimate, trainingPeriods, todayStr, addDays } from '../lib/stats.js';
+import { topSetText, makeT, dateShort, dateDay, dateMonthYear, dateMedium, agoLong, durLong, monthYearLong, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
 import { Card, Label, Stat, Delta, DeltaPill, Hero, CardTitle, CountUp, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
 import PageHeader from '../ui/PageHeader.jsx';
 import { keyFor, FAV_BASE } from '../lib/profiles.js';
@@ -26,6 +26,39 @@ function RecordLine({ sum, unit, lang, t }) {
         </div>
       )}
     </div>
+  );
+}
+
+// Verso il prime: per ogni esercizio selezionato, stima di quando tornerai al tuo massimo
+function PrimeCard({ names, model, colorOf, exLang, lang }) {
+  const today = todayStr();
+  const rows = names.map(n => ({ n, est: primeEstimate(model.history[n], today) })).filter(r => r.est);
+  if (!rows.length) return null;
+  return (
+    <Card>
+      <CardTitle icon="target" tone="#1FD17A">Verso il prime</CardTitle>
+      <div className="prime-list">
+        {rows.map(({ n, est }) => (
+          <div key={n} className={`prime-row ${est.prime ? 'ok' : ''}`}>
+            <div className="row between" style={{ gap: 10 }}>
+              <span className="prime-name"><span className="dot" style={{ background: colorOf(n) }} />{translateExercise(n, exLang)}</span>
+              {est.prime
+                ? <span className="prime-badge">Nel prime</span>
+                : <span className="prime-pct">{Math.round(est.ratio * 100)}% del record</span>}
+            </div>
+            <div className="prime-bar"><i style={{ width: `${Math.max(4, Math.round(est.ratio * 100))}%`, background: est.prime ? '#1FD17A' : colorOf(n) }} /></div>
+            {est.prime && <p className="prime-txt">Sei al massimo su questo esercizio.</p>}
+            {!est.prime && est.noPrecedent && <p className="prime-txt">Questo livello non l'hai mai toccato prima del record, quindi non ho un precedente su cui stimare i tempi.</p>}
+            {!est.prime && est.from && (
+              <>
+                <div className="prime-eta"><b>~ {durLong(lang, est.days)}</b><span>circa {est.sessions} {est.sessions === 1 ? 'seduta' : 'sedute'} · verso {monthYearLong(lang, est.eta)}</span></div>
+                <p className="prime-txt">Eri già a questo livello il {dateMedium(lang, est.from.date)}: da lì al record sono passati {durLong(lang, est.days)} e {est.sessions} {est.sessions === 1 ? 'seduta' : 'sedute'}.</p>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }
 
@@ -321,6 +354,8 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
           foot={<RecordLine sum={heroSum} unit={heroU} lang={lang} t={t} />}>
         </Hero>
       )}
+
+      {selected.length > 0 && <PrimeCard names={selected} model={model} colorOf={colorOf} exLang={exLang} lang={lang} />}
 
       {selected.length > 0 && (
         <Card>

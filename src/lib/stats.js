@@ -202,5 +202,27 @@ export function exerciseSummary(hist, today = todayStr()) {
   };
 }
 
+// Verso il prime: confronta il livello dell'ultima seduta con il passato.
+// Cerca la prima volta in cui sei stato a quel livello (tolleranza 2%) prima del record
+// e misura quanto tempo e quante sedute sono servite da lì per arrivare al record.
+export function primeEstimate(hist, today = todayStr()) {
+  if (!hist || hist.length < 2) return null;
+  const last = hist[hist.length - 1];
+  let bi = 0;
+  hist.forEach((s, i) => { if (s.e1rm > hist[bi].e1rm) bi = i; });
+  const best = hist[bi];
+  if (!(best.e1rm > 0)) return null;
+  const tol = last.bw ? 0 : 0.02;
+  const ratio = last.e1rm / best.e1rm;
+  if (bi === hist.length - 1 || last.e1rm >= best.e1rm * (1 - tol)) return { prime: true, last, best, ratio: Math.min(1, ratio) };
+  const level = last.e1rm * (1 - tol);
+  const li = hist.findIndex((s, i) => i < bi && s.e1rm >= level);
+  if (li < 0) return { prime: false, last, best, ratio, noPrecedent: true };
+  const from = hist[li];
+  const days = Math.max(1, daysBetween(from.date, best.date));
+  const sessions = bi - li;
+  return { prime: false, last, best, ratio, from, days, sessions, eta: addDays(today, days) };
+}
+
 export const trainingPeriods = raw => analyzeTrainingPeriods(raw);
 export { KG_TO_LB };

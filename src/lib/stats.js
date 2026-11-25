@@ -52,6 +52,19 @@ export function mergeRows(existing, incoming) {
   return { merged, added, read: incoming.length };
 }
 
+// Eccezione per il profilo principale (Emanuele): sul cavo dei Cable Lateral Raise alcune sedute sono state
+// registrate in Liftoff in libbre, ma il numero scritto è quello del cavo in kg. Le correggo in lettura,
+// senza toccare i dati salvati: 4,5 kg → 10, 5,7 → 12,5, 6,8 → 15, 3,4/3,5 → 7,5.
+const CABLE_LATERAL_FIX = [[4.536, 10], [5.67, 12.5], [6.804, 15], [3.402, 7.5], [3.515, 7.5]];
+export function fixRaw(profileId, raw) {
+  if (profileId !== 'main') return raw;
+  return raw.map(r => {
+    if (r[1] !== 'Cable Lateral Raise') return r;
+    const hit = CABLE_LATERAL_FIX.find(([from]) => Math.abs(r[3] - from) < 0.03);
+    return hit ? [r[0], r[1], r[2], hit[1], r[4]] : r;
+  });
+}
+
 // Import che sostituisce: il CSV di Liftoff è lo storico completo, quindi per ogni giorno presente nel file
 // le righe già salvate vengono rimpiazzate (così modifiche ai carichi, serie cancellate e CSV con
 // precisioni diverse non lasciano righe doppie o vecchie). I giorni assenti dal file restano intatti.

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Papa from 'papaparse';
 import logo from './assets/phyzx-icon.png';
 import { WORKOUT_DATA_KEY, UNITS_KEY } from './lib/core.js';
-import { buildModel, liftoffRowsToRaw, mergeRows, replaceByDate, normalizeRows, snapKg } from './lib/stats.js';
+import { buildModel, liftoffRowsToRaw, mergeRows, replaceByDate, fixRaw, normalizeRows, snapKg } from './lib/stats.js';
 import { makeT } from './lib/i18n.js';
 import { Icon, DockIcon, Label } from './ui/kit.jsx';
 import { ProfileButton, ProfileSheet } from './ui/Profiles.jsx';
@@ -92,7 +92,7 @@ function Main({ syncKey, onInvalid }) {
   const [msg, setMsg] = useState(null);
 
   const t = makeT(lang);
-  const model = useMemo(() => buildModel(raw), [raw]);
+  const model = useMemo(() => buildModel(fixRaw(activeId, raw)), [raw, activeId]);
 
   
   const [scrolled, setScrolled] = useState(false);

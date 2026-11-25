@@ -9,7 +9,7 @@ import { ProfileButton, ProfileSheet } from './ui/Profiles.jsx';
 import { keyFor, loadProfiles, saveProfiles, loadActive, saveActive, newProfile, cleanName, wipeProfileData } from './lib/profiles.js';
 import { readKeyFromUrl, storedKey, storeKey, clearKey, verifyKey, resetLocal, syncNow, touch, addDeleted, setSyncListener } from './lib/sync.js';
 import { NotFound, Offline } from './ui/NotFound.jsx';
-import { notifyOthers } from './lib/push.js';
+import { notifyOthers, autoEnablePush } from './lib/push.js';
 import Recent from './screens/Recent.jsx';
 import Analysis from './screens/Analysis.jsx';
 import Progress from './screens/Progress.jsx';
@@ -119,6 +119,7 @@ function Main({ syncKey, onInvalid }) {
       if (ev.changed) reload();
     });
     runSync();
+    autoEnablePush();
     const vis = () => { if (document.visibilityState === 'visible') runSync(); };
     document.addEventListener('visibilitychange', vis);
     return () => { document.removeEventListener('visibilitychange', vis); setSyncListener(null); };

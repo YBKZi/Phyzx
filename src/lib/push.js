@@ -20,9 +20,29 @@ export async function pushState() {
   try { const { sub } = await currentSub(); return sub && Notification.permission === 'granted' ? 'on' : 'off'; } catch (e) { return 'off'; }
 }
 
+const ASKED = 'phyzx-push-asked', OPTOUT = 'phyzx-push-optout';
+const flag = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { /* noop */ } return null; };
+
+// Notifiche attive di default: alla prima apertura chiede il permesso (al primo tocco, perché i browser
+// lo vogliono in risposta a un gesto); se il permesso c'è già ma il dispositivo non è iscritto, lo iscrive.
+// Chi le ha disattivate a mano non viene più disturbato.
+export async function autoEnablePush() {
+  if (!pushSupported() || !storedKey() || flag(OPTOUT)) return;
+  if (Notification.permission === 'denied') return;
+  if (Notification.permission === 'granted') { if ((await pushState()) === 'off') { try { await enablePush(); } catch (e) { /* noop */ } } return; }
+  if (flag(ASKED)) return;
+  const go = async () => {
+    window.removeEventListener('pointerdown', go, true); window.removeEventListener('keydown', go, true);
+    flag(ASKED, '1');
+    try { await enablePush(); } catch (e) { /* noop */ }
+  };
+  window.addEventListener('pointerdown', go, true); window.addEventListener('keydown', go, true);
+}
+
 export async function enablePush() {
   const key = storedKey();
   if (!key || !pushSupported()) return 'unsupported';
+  flag(OPTOUT, null);
   const perm = await Notification.requestPermission();
   if (perm !== 'granted') return perm === 'denied' ? 'blocked' : 'off';
   const { reg, sub: old } = await currentSub();
@@ -38,6 +58,7 @@ export async function enablePush() {
 }
 
 export async function disablePush() {
+  flag(OPTOUT, '1');
   const key = storedKey();
   const { sub } = await currentSub();
   if (sub) {

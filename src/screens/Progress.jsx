@@ -2,11 +2,32 @@ import React, { useMemo, useState } from 'react';
 import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { translateExercise, translateGroup, GROUP_COLOR, unitFor } from '../lib/core.js';
 import { exerciseSummary, trainingPeriods, todayStr, addDays } from '../lib/stats.js';
-import { topSetText, makeT, dateShort, dateDay, dateMonthYear, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
+import { topSetText, makeT, dateShort, dateDay, dateMonthYear, dateMedium, agoLong, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
 import { Card, Label, Stat, Delta, DeltaPill, Hero, CardTitle, CountUp, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
 import PageHeader from '../ui/PageHeader.jsx';
 import { keyFor, FAV_BASE } from '../lib/profiles.js';
 import { touch } from '../lib/sync.js';
+
+// Sotto la scheda dell'esercizio: quando è stato fatto l'ultimo record e con quale serie
+function RecordLine({ sum, unit, lang, t }) {
+  const b = sum.best;
+  const kgTxt = `${num(wv(b.topKg, unit), wv(b.topKg, unit) % 1 ? 1 : 0)} ${unitLabelFor(undefined, unit)}`;
+  return (
+    <div className="rec-line">
+      <div className="rec-main">
+        <span className="rec-eyebrow">Ultimo record · {agoLong(lang, b.date)}</span>
+        <span className="rec-set">{b.bw ? `${b.topReps} ${t('reps')}` : `${kgTxt} × ${b.topReps}`}</span>
+        <span className="rec-date">{dateMedium(lang, b.date)}</span>
+      </div>
+      {!b.bw && (
+        <div className="rec-est">
+          <span className="rec-eyebrow">1RM stimato</span>
+          <span className="rec-set">{num(wv(b.e1rm, unit), 1)} {unitLabelFor(undefined, unit)}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Unità di ogni esercizio sul grafico: se se ne mescolano due, tutto in kg (libbre convertite)
 const unitsFor = (names, unit) => {
@@ -297,8 +318,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
         <Hero tone="blue" eyebrow={translateExercise(primary, exLang)} tag={`${translateGroup(model.groupOf[primary], lang)} · 1RM stimato`}
           value={heroSum.bw ? <CountUp to={Math.round(heroSum.last.e1rm)} /> : <CountUp to={wv(heroSum.last.e1rm, heroU)} decimals={1} />} unit={heroSum.bw ? t('reps') : heroU}
           pills={<><DeltaPill v={heroSum.delta30} label="30 gg" /><DeltaPill v={heroSum.delta90} label="90 gg" /></>}
-          foot={<><span>Record {heroSum.bw ? `${Math.round(heroSum.best.e1rm)} ${t('reps')}` : wu(heroSum.best.e1rm, heroU)}</span><span>{heroSum.sessions} sessioni</span></>}>
-          <Sparkline values={model.history[primary].slice(-30).map(s => s.e1rm)} color="#FFFFFF" height={54} />
+          foot={<RecordLine sum={heroSum} unit={heroU} lang={lang} t={t} />}>
         </Hero>
       )}
 

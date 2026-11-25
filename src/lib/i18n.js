@@ -77,6 +77,23 @@ export const dateLong = (lang, s) => fmt(lang, { weekday: 'long', day: 'numeric'
 export const dateWeekday = (lang, s) => fmt(lang, { weekday: 'short' }).format(asDate(s)).replace('.', '');
 export const dateMonthYear = (lang, ts) => fmt(lang, { month: 'short', year: '2-digit' }).format(new Date(ts)).replace('.', '');
 
+export const dateMedium = (lang, s) => fmt(lang, { day: 'numeric', month: 'short', year: 'numeric' }).format(asDate(s)).replace(/\./g, '');
+
+// "3 mesi fa", "1 anno e 2 mesi fa": distanza leggibile per eventi lontani
+export function agoLong(lang, s, today = todayStr()) {
+  const it = lang !== 'en';
+  const n = Math.max(0, daysBetween(s, today));
+  if (n < 2) return n === 0 ? (it ? 'oggi' : 'today') : (it ? 'ieri' : 'yesterday');
+  if (n < 45) return it ? `${n} giorni fa` : `${n} days ago`;
+  const months = Math.round(n / 30.44);
+  if (months < 12) return it ? `${months} mesi fa` : `${months} months ago`;
+  const y = Math.floor(months / 12), m = months % 12;
+  const ys = it ? (y === 1 ? '1 anno' : `${y} anni`) : (y === 1 ? '1 year' : `${y} years`);
+  if (!m) return it ? `${ys} fa` : `${ys} ago`;
+  const ms = it ? (m === 1 ? '1 mese' : `${m} mesi`) : (m === 1 ? '1 month' : `${m} months`);
+  return it ? `${ys} e ${ms} fa` : `${ys} ${m ? 'and ' + ms : ''} ago`;
+}
+
 export function relativeDay(lang, s, today = todayStr()) {
   const t = makeT(lang);
   const n = daysBetween(s, today);

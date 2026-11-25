@@ -17,7 +17,9 @@ async function currentSub() {
 export async function pushState() {
   if (!pushSupported()) return 'unsupported';
   if (Notification.permission === 'denied') return 'blocked';
-  try { const { sub } = await currentSub(); return sub && Notification.permission === 'granted' ? 'on' : 'off'; } catch (e) { return 'off'; }
+  if (flag(OPTOUT)) return 'off';
+  // Attive di default: finché il permesso non è stato chiesto (o l'iscrizione è in corso) l'interruttore resta su "on"
+  return 'on';
 }
 
 const ASKED = 'phyzx-push-asked', OPTOUT = 'phyzx-push-optout';
@@ -31,7 +33,8 @@ export async function autoEnablePush() {
   if (Notification.permission === 'denied') return;
   if (Notification.permission === 'granted') { if ((await pushState()) === 'off') { try { await enablePush(); } catch (e) { /* noop */ } } return; }
   if (flag(ASKED)) return;
-  const go = async () => {
+  const go = async e => {
+    if (e && e.target && e.target.closest && e.target.closest('.switch, .notif-row')) return;   // chi tocca l'interruttore decide da sé
     window.removeEventListener('pointerdown', go, true); window.removeEventListener('keydown', go, true);
     flag(ASKED, '1');
     try { await enablePush(); } catch (e) { /* noop */ }

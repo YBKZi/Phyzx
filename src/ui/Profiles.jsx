@@ -108,11 +108,11 @@ export function ProfileSheet({ profiles, activeId, onSwitch, onAdd, onRename, on
           <div className="notif-row">
             <div style={{ minWidth: 0 }}>
               <div className="notif-title">Notifiche</div>
-              <div className="notif-sub">
-                {push === 'blocked' ? 'Bloccate: riattivale dalle impostazioni del browser'
-                  : push === 'error' ? 'Non è stato possibile attivarle, riprova'
-                  : 'Un avviso quando qualcuno aggiorna i dati'}
-              </div>
+              {(push === 'blocked' || push === 'error') && (
+                <div className="notif-sub">
+                  {push === 'blocked' ? 'Bloccate: riattivale dalle impostazioni del browser' : 'Non è stato possibile attivarle, riprova'}
+                </div>
+              )}
             </div>
             <button className={`switch ${push === 'on' ? 'on' : ''}`} role="switch" aria-checked={push === 'on'} aria-label="Notifiche di aggiornamento"
               disabled={pushBusy || push === 'blocked'} onClick={togglePush}><i /></button>

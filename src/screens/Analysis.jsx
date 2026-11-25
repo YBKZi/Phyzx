@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { translateExercise, GROUP_COLOR } from '../lib/core.js';
 import { todayStr } from '../lib/stats.js';
 import { buildAnalysis } from '../lib/analytics.js';
 import { dateShort, dateDay, wu, num, pct } from '../lib/i18n.js';
-import { Card, Label, Stat, Delta, DeltaPill, Hero, CardTitle, Ring, CountUp, PRBadge, Donut, COLORS } from '../ui/kit.jsx';
+import { Card, Label, Stat, Delta, DeltaPill, Hero, CardTitle, Ring, CountUp, PRBadge, Donut, Segmented, COLORS } from '../ui/kit.jsx';
 
 const gColor = g => GROUP_COLOR[g] || COLORS.flat;
 const MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
@@ -47,6 +47,36 @@ function Columns({ items, highlightLast }) {
   );
 }
 
+// Colonne scorrevoli per storie lunghe: parte dal mese più recente, gennaio mostra l'anno
+function ScrollColumns({ items }) {
+  const ref = useRef(null);
+  const max = Math.max(1, ...items.map(i => i.value));
+  useEffect(() => { if (ref.current) ref.current.scrollLeft = ref.current.scrollWidth; }, [items.length]);
+  const W = 26;
+  return (
+    <div ref={ref} style={{ overflowX: 'auto', margin: '0 -4px', padding: '0 4px', scrollbarWidth: 'none' }}>
+      <div style={{ width: items.length * (W + 4), minWidth: '100%' }}>
+        <div style={{ height: 96, display: 'flex', alignItems: 'flex-end', gap: 4 }}>
+          {items.map((it, i) => (
+            <div key={it.key} style={{ width: W, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+              {it.value > 0 && <span className="mono" style={{ fontSize: 10, color: 'var(--text-2)' }}>{it.value}</span>}
+              <div style={{ width: '100%', height: `${Math.max((it.value / max) * 100, it.value ? 5 : 2)}%`, borderRadius: 6, background: it.value ? (i === items.length - 1 ? COLORS.accent : 'rgba(47,140,255,.45)') : 'var(--surface-2)' }} />
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
+          {items.map(it => (
+            <div key={it.key} style={{ width: W, flexShrink: 0, textAlign: 'center', fontSize: 9.5, color: 'var(--text-3)', lineHeight: 1.25 }}>
+              {it.label}
+              <div style={{ height: 11, color: 'var(--text-2)', fontWeight: 600 }}>{it.month === 0 ? `'${String(it.year).slice(2)}` : ''}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Row({ left, right, sub }) {
   return (
     <div className="row between" style={{ padding: '11px 0', borderTop: '1px solid var(--line)', gap: 12 }}>
@@ -62,6 +92,7 @@ function Row({ left, right, sub }) {
 const fmtSpan = days => (days >= 365 ? `${num(days / 365, 1)} anni` : days >= 60 ? `${Math.round(days / 30.4)} mesi` : `${days} giorni`);
 
 export default function Analysis({ model, unit }) {
+  const [recRange, setRecRange] = useState('12m');
   const a = useMemo(() => buildAnalysis(model, todayStr()), [model]);
   if (!a) return null;
   const { overview: o, consistency: c, balance: b } = a;
@@ -159,8 +190,13 @@ export default function Analysis({ model, unit }) {
       </div>
 
       <Card>
-        <Title icon="trophy" tone="#FFC439" sub="ultimi 12 mesi">Record per mese</Title>
-        <Columns highlightLast items={a.records.months.map(m => ({ key: m.key, label: MONTHS[m.month], value: m.workouts }))} />
+        <Title icon="trophy" tone="#FFC439" sub={recRange === 'all' ? `${a.records.monthsAll.length} mesi · scorri` : 'ultimi 12 mesi'}>Record per mese</Title>
+        {a.records.monthsAll.length > 12 && (
+          <div style={{ marginBottom: 12 }}><Segmented small value={recRange} onChange={setRecRange} options={[{ value: '12m', label: '12 mesi' }, { value: 'all', label: 'Tutta la storia' }]} /></div>
+        )}
+        {recRange === 'all' && a.records.monthsAll.length > 12
+          ? <ScrollColumns items={a.records.monthsAll.map(m => ({ key: m.key, label: MONTHS[m.month], month: m.month, year: m.year, value: m.workouts }))} />
+          : <Columns highlightLast items={a.records.months.map(m => ({ key: m.key, label: MONTHS[m.month], value: m.workouts }))} />}
       </Card>
 
       <Card>

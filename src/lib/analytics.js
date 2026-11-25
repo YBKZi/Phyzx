@@ -81,9 +81,21 @@ export function buildAnalysis(model, today = todayStr()) {
   prs.sort((a, b) => b.date.localeCompare(a.date));
   const prMonths = months.map(m => ({ ...m, workouts: 0 }));
   prs.forEach(p => { const i = mIdx.get(p.date.slice(0, 7)); if (i != null) prMonths[i].workouts++; });
+  // record per mese su tutta la storia: dal primo mese con dati a oggi
+  const prAll = [];
+  {
+    const [fy, fm] = first.split('-').map(Number);
+    const n = (ty - fy) * 12 + (tm - fm);
+    for (let i = 0; i <= n; i++) {
+      const d = new Date(Date.UTC(fy, fm - 1 + i, 1));
+      prAll.push({ key: `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`, month: d.getUTCMonth(), year: d.getUTCFullYear(), workouts: 0 });
+    }
+    const idx = new Map(prAll.map((m, i) => [m.key, i]));
+    prs.forEach(p => { const i = idx.get(p.date.slice(0, 7)); if (i != null) prAll[i].workouts++; });
+  }
   const records = {
     total: prs.length, last90: prs.filter(p => p.date >= addDays(today, -89)).length,
-    latest: prs.slice(0, 8), months: prMonths,
+    latest: prs.slice(0, 8), months: prMonths, monthsAll: prAll,
     perWorkout: prs.length / wk.length,
   };
 

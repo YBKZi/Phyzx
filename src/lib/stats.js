@@ -202,10 +202,47 @@ export function exerciseSummary(hist, today = todayStr()) {
   };
 }
 
-// Verso il prime: confronta il livello dell'ultima seduta con il passato.
-// Cerca l'ultima volta in cui sei salito a quel livello (fascia del 5%, circa una ripetizione) prima del record,
-// partendo da sotto (calo di almeno 10%: una seduta storta non conta come ripartenza), e misura quanto tempo
-// e quante sedute sono servite da lì per arrivare al record.
+// ── Verso il prime ───────────────────────────────────────────────────────────
+// Recuperare un prime già avuto è più veloce che raggiungerlo la prima volta. Quindi:
+//  1) se in passato hai già ripreso un tuo picco dopo un calo, partendo dal livello di oggi,
+//     la stima usa quei recuperi reali (mediana degli ultimi 3);
+//  2) altrimenti prende il tempo della prima salita al record e lo accorcia in base a quanto
+//     tempo fa hai avuto il prime (da ~45% del tempo se è recente, fino al 100% dopo 2 anni).
+
+const median = a => { const v = [...a].sort((x, y) => x - y), m = v.length >> 1; return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
+
+// Un recupero: calo di almeno 8% da un picco P, poi ritorno a ≥ P (−2%). Misura il tratto che parte
+// dall'ultima risalita al livello `lam` (frazione del picco) fino al ritorno al picco.
+function reattainments(hist, lam, bw) {
+  const tol = bw ? 0 : 0.02;
+  const out = [];
+  let peak = hist[0].e1rm, fall = -1;
+  for (let i = 1; i < hist.length; i++) {
+    const e = hist[i].e1rm;
+    if (e >= peak * (1 - tol)) {
+      if (fall >= 0) { const ep = recovery(hist, fall, i, peak, lam, bw); if (ep) out.push(ep); fall = -1; }
+      if (e > peak) peak = e;
+    } else if (fall < 0 && e < peak * 0.92) fall = i;
+  }
+  return out;
+}
+
+function recovery(hist, f, q, P, lam, bw) {
+  let am = f;
+  for (let j = f; j < q; j++) if (hist[j].e1rm < hist[am].e1rm) am = j;
+  const tgt = P * lam;
+  if (hist[am].e1rm > tgt) return null; // il calo non è mai arrivato al livello di oggi
+  const level = tgt - (bw ? Math.max(1, Math.round(tgt * 0.05)) : tgt * 0.05);
+  const floor = tgt - (bw ? Math.max(3, Math.round(tgt * 0.12)) : tgt * 0.1);
+  let li = -1, below = true;
+  for (let j = am; j < q; j++) {
+    const e = hist[j].e1rm;
+    if (below && e >= level) { li = j; below = false; } else if (e < floor) below = true;
+  }
+  if (li < 0) return null;
+  return { from: hist[li], to: hist[q], days: Math.max(1, daysBetween(hist[li].date, hist[q].date)), sessions: q - li };
+}
+
 export function primeEstimate(hist, today = todayStr()) {
   if (!hist || hist.length < 2) return null;
   const last = hist[hist.length - 1];
@@ -216,22 +253,31 @@ export function primeEstimate(hist, today = todayStr()) {
   const tol = last.bw ? 0 : 0.02;
   const ratio = last.e1rm / best.e1rm;
   if (bi === hist.length - 1 || last.e1rm >= best.e1rm * (1 - tol)) return { prime: true, last, best, ratio: Math.min(1, ratio) };
-  // "A quel livello" è una fascia, non un valore preciso: una serie in meno (es. 20 kg × 5 invece di × 6)
-  // conta ancora come stesso livello; la ripartenza si azzera solo con un calo netto (~10%).
+
+  // 1) recuperi reali già avvenuti partendo da questo livello
+  const eps = reattainments(hist, ratio, last.bw).slice(-3);
+  if (eps.length) {
+    const days = Math.max(1, Math.round(median(eps.map(e => e.days))));
+    const sessions = Math.max(1, Math.round(median(eps.map(e => e.sessions))));
+    return { prime: false, kind: 'reattain', last, best, ratio, n: eps.length, from: eps[eps.length - 1].from, days, sessions, eta: addDays(today, days) };
+  }
+
+  // 2) prima salita al record, accorciata perché il prime è già stato avuto
   const band = last.bw ? Math.max(1, Math.round(last.e1rm * 0.05)) : last.e1rm * 0.05;
   const level = last.e1rm - band;
   const floor = last.bw ? last.e1rm - Math.max(3, Math.round(last.e1rm * 0.12)) : last.e1rm * 0.9;
   let li = -1, below = true;
   for (let i = 0; i < bi; i++) {
     const e = hist[i].e1rm;
-    if (below && e >= level) { li = i; below = false; }
-    else if (e < floor) below = true;
+    if (below && e >= level) { li = i; below = false; } else if (e < floor) below = true;
   }
   if (li < 0) return { prime: false, last, best, ratio, noPrecedent: true };
   const from = hist[li];
-  const days = Math.max(1, daysBetween(from.date, best.date));
-  const sessions = bi - li;
-  return { prime: false, last, best, ratio, from, days, sessions, eta: addDays(today, days) };
+  const firstDays = Math.max(1, daysBetween(from.date, best.date)), firstSessions = bi - li;
+  const age = Math.max(0, daysBetween(best.date, today));
+  const factor = 0.45 + 0.55 * Math.min(1, age / 730);
+  const days = Math.max(1, Math.round(firstDays * factor)), sessions = Math.max(1, Math.round(firstSessions * factor));
+  return { prime: false, kind: 'model', last, best, ratio, from, days, sessions, eta: addDays(today, days), firstDays, firstSessions, factor, age };
 }
 
 export const trainingPeriods = raw => analyzeTrainingPeriods(raw);

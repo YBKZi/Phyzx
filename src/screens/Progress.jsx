@@ -52,7 +52,18 @@ function PrimeCard({ names, model, colorOf, exLang, lang }) {
             {!est.prime && est.from && (
               <>
                 <div className="prime-eta"><b>~ {durLong(lang, est.days)}</b><span>circa {est.sessions} {est.sessions === 1 ? 'seduta' : 'sedute'} · verso {monthYearLong(lang, est.eta)}</span></div>
-                <p className="prime-txt">L'ultima volta che sei salito a questo livello è stato il {dateMedium(lang, est.from.date)}: da lì al record sono passati {durLong(lang, est.days)} e {est.sessions} {est.sessions === 1 ? 'seduta' : 'sedute'}.</p>
+                {est.kind === 'reattain' ? (
+                  <p className="prime-txt">
+                    {est.n === 1
+                      ? <>Il prime l'hai già ripreso una volta partendo da qui: dal {dateMedium(lang, est.from.date)} ci hai messo {durLong(lang, est.days)} e {est.sessions} {est.sessions === 1 ? 'seduta' : 'sedute'}.</>
+                      : <>Le ultime {est.n} volte che hai ripreso il prime partendo da qui ci hai messo in genere {durLong(lang, est.days)} e {est.sessions} {est.sessions === 1 ? 'seduta' : 'sedute'} (l'ultima dal {dateMedium(lang, est.from.date)}).</>}
+                  </p>
+                ) : (
+                  <p className="prime-txt">
+                    La prima volta, da questo livello al record ci hai messo {durLong(lang, est.firstDays)} e {est.firstSessions} {est.firstSessions === 1 ? 'seduta' : 'sedute'} (dal {dateMedium(lang, est.from.date)}).
+                    Ora il prime l'hai già avuto, {agoLong(lang, est.best.date)}, quindi conto circa il {Math.round(est.factor * 100)}% di quel tempo.
+                  </p>
+                )}
               </>
             )}
           </div>

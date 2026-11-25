@@ -239,3 +239,11 @@ input[type="range"] { accent-color: var(--accent); }
 .head-actions { display: flex; align-items: center; gap: 8px; }
 .sync-line { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-2); margin: -2px 0 8px; }
 .sync-line i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.notif-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0 2px; border-top: 1px solid var(--line); margin-top: 6px; }
+.notif-title { font-family: var(--display); font-weight: 700; font-size: 15px; }
+.notif-sub { font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
+.switch { position: relative; width: 52px; height: 32px; border-radius: 999px; background: var(--surface-3); flex-shrink: 0; transition: background .2s; }
+.switch i { position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; transition: transform .2s cubic-bezier(.2,.8,.2,1); }
+.switch.on { background: var(--blue); }
+.switch.on i { transform: translateX(20px); }
+.switch:disabled { opacity: .5; }

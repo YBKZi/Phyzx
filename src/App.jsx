@@ -9,6 +9,7 @@ import { ProfileButton, ProfileSheet } from './ui/Profiles.jsx';
 import { keyFor, loadProfiles, saveProfiles, loadActive, saveActive, newProfile, cleanName, wipeProfileData } from './lib/profiles.js';
 import { readKeyFromUrl, storedKey, storeKey, clearKey, verifyKey, resetLocal, syncNow, touch, addDeleted, setSyncListener } from './lib/sync.js';
 import { NotFound, Offline } from './ui/NotFound.jsx';
+import { notifyOthers } from './lib/push.js';
 import Recent from './screens/Recent.jsx';
 import Analysis from './screens/Analysis.jsx';
 import Progress from './screens/Progress.jsx';
@@ -161,6 +162,7 @@ function Main({ syncKey, onInvalid }) {
       setRaw(merged);
       setMsg({ ok: true, text: t('imported')(added, n) });
       touch();
+      if (added > 0) setTimeout(() => notifyOthers(profile.name, added), 2500);   // dopo la sincronizzazione, così chi apre trova già i dati
     } catch (e) {
       setMsg({ ok: false, text: t('importError') });
     } finally { setImporting(false); }

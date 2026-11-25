@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Icon } from './kit.jsx';
 import { NAME_MAX, workoutCount } from '../lib/profiles.js';
+import { pushState, enablePush, disablePush } from '../lib/push.js';
 
 export function Avatar({ p, size = 36 }) {
   return (
@@ -26,6 +27,13 @@ export function ProfileSheet({ profiles, activeId, onSwitch, onAdd, onRename, on
   const [name, setName] = useState('');
   const counts = useMemo(() => Object.fromEntries(profiles.map(p => [p.id, workoutCount(p.id)])), [profiles]);
   const last = profiles.length === 1;
+  const [push, setPush] = useState('...');
+  const [pushBusy, setPushBusy] = useState(false);
+  useEffect(() => { pushState().then(setPush); }, []);
+  const togglePush = async () => {
+    setPushBusy(true);
+    try { setPush(push === 'on' ? await disablePush() : await enablePush()); } catch (e) { setPush('error'); } finally { setPushBusy(false); }
+  };
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -95,6 +103,21 @@ export function ProfileSheet({ profiles, activeId, onSwitch, onAdd, onRename, on
             );
           })}
         </div>
+
+        {push !== 'unsupported' && push !== '...' && (
+          <div className="notif-row">
+            <div style={{ minWidth: 0 }}>
+              <div className="notif-title">Notifiche</div>
+              <div className="notif-sub">
+                {push === 'blocked' ? 'Bloccate: riattivale dalle impostazioni del browser'
+                  : push === 'error' ? 'Non è stato possibile attivarle, riprova'
+                  : 'Un avviso quando qualcuno aggiorna i dati'}
+              </div>
+            </div>
+            <button className={`switch ${push === 'on' ? 'on' : ''}`} role="switch" aria-checked={push === 'on'} aria-label="Notifiche di aggiornamento"
+              disabled={pushBusy || push === 'blocked'} onClick={togglePush}><i /></button>
+          </div>
+        )}
 
         <form className="prof-add" onSubmit={submitAdd}>
           <input className="field" placeholder="Nuovo profilo" maxLength={NAME_MAX} value={name} onChange={e => setName(e.target.value)} aria-label="Nome del nuovo profilo" />

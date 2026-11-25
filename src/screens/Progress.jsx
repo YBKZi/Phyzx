@@ -364,7 +364,20 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
     return model.exerciseList.filter(e => (!group || e.group === group) && (!q || e.name.toLowerCase().includes(q) || translateExercise(e.name, exLang).toLowerCase().includes(q)));
   }, [model, query, exLang, group]);
 
-  const toggleFav = name => setFavs(prev => { const next = prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]; try { localStorage.setItem(keyFor(FAV_BASE, profileId), JSON.stringify(next)); } catch (e) { /* noop */ } setTimeout(touch, 0); return next; });
+  const toggleFav = name => {
+    const removing = favs.includes(name);
+    const next = removing ? favs.filter(n => n !== name) : [...favs, name];
+    setFavs(next);
+    try { localStorage.setItem(keyFor(FAV_BASE, profileId), JSON.stringify(next)); } catch (e) { /* noop */ }
+    setTimeout(touch, 0);
+    // Tolta la stellina, l'esercizio sparisce anche dalla riga dei chip: quindi va deselezionato.
+    // Se era l'ultimo selezionato, si passa al primo preferito rimasto.
+    if (removing && selected.includes(name)) {
+      const rest = selected.filter(n => n !== name);
+      const fallback = rest.length ? rest : (model.exerciseList.find(e => next.includes(e.name)) ? [model.exerciseList.find(e => next.includes(e.name)).name] : []);
+      setSelected(fallback);
+    }
+  };
   // scrollina: preferiti (ordine per frequenza/recenza) + eventuali esercizi selezionati non preferiti
   const chipList = useMemo(() => {
     const byName = new Map(model.exerciseList.map(e => [e.name, e]));

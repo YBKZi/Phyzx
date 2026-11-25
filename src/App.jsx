@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Papa from 'papaparse';
 import logo from './assets/phyzx-icon.png';
 import { WORKOUT_DATA_KEY, UNITS_KEY } from './lib/core.js';
-import { buildModel, liftoffRowsToRaw, mergeRows, normalizeRows, snapKg } from './lib/stats.js';
+import { buildModel, liftoffRowsToRaw, mergeRows, replaceByDate, normalizeRows, snapKg } from './lib/stats.js';
 import { makeT } from './lib/i18n.js';
 import { Icon, DockIcon, Label } from './ui/kit.jsx';
 import { ProfileButton, ProfileSheet } from './ui/Profiles.jsx';
@@ -156,7 +156,11 @@ function Main({ syncKey, onInvalid }) {
     try {
       const rows = liftoffRowsToRaw(await parseCsv(file));
       if (!rows.length) { setMsg({ ok: false, text: t('importNone') }); return; }
-      const { merged, added, read: n } = mergeRows(raw, rows);
+      const { merged, added, read: n } = replaceByDate(raw, rows);
+      // da ora i dati di questo profilo sono quelli del file: gli altri dispositivi devono adottarli, non unirli ai vecchi
+      const now = Date.now();
+      const list = loadProfiles().map(p => (p.id === activeId ? { ...p, u: now, re: now } : p));
+      saveProfiles(list); setProfiles(list);
       write(keyFor(WORKOUT_DATA_KEY, activeId), JSON.stringify(merged));
       write(MIGRATION_KEY, '1');
       setRaw(merged);

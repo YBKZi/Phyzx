@@ -79,22 +79,26 @@ export function resetLocal() {
 export function merge(a, b) {
   const gone = new Set([...(a.del || []), ...(b.del || [])]);
   const byId = new Map();
+  const reOf = (snap, id) => ((snap.profiles || []).find(p => p.id === id) || {}).re || 0;
   [...(a.profiles || []), ...(b.profiles || [])].forEach(p => {
     if (gone.has(p.id)) return;
     const cur = byId.get(p.id);
     if (!cur || (p.u || 0) > (cur.u || 0)) byId.set(p.id, p);
   });
-  const profiles = [...byId.values()];
+  const profiles = [...byId.values()].map(p => ({ ...p, re: Math.max(reOf(a, p.id), reOf(b, p.id)) || undefined }));
   const rows = {}, favs = {};
   profiles.forEach(p => {
-    rows[p.id] = mergeRows((a.rows || {})[p.id] || [], (b.rows || {})[p.id] || []).merged;
+    const ra = (a.rows || {})[p.id] || [], rb = (b.rows || {})[p.id] || [];
+    const ea = reOf(a, p.id), eb = reOf(b, p.id);
+    // un import che sostituisce i dati (epoca più recente) vince: unirlo ai vecchi riporterebbe righe doppie
+    rows[p.id] = ea > eb ? ra : eb > ea ? rb : mergeRows(ra, rb).merged;
     favs[p.id] = [...new Set([...((a.favs || {})[p.id] || []), ...((b.favs || {})[p.id] || [])])];
   });
   return { profiles: profiles.length ? profiles : loadProfiles(), rows, favs, del: [...gone] };
 }
 
 const canon = s => JSON.stringify({
-  p: [...s.profiles].sort((x, y) => x.id.localeCompare(y.id)).map(p => [p.id, p.name, p.color, p.u || 0]),
+  p: [...s.profiles].sort((x, y) => x.id.localeCompare(y.id)).map(p => [p.id, p.name, p.color, p.u || 0, p.re || 0]),
   r: Object.keys(s.rows).sort().map(id => [id, s.rows[id].map(r => JSON.stringify(r)).sort()]),
   f: Object.keys(s.favs).sort().map(id => [id, [...s.favs[id]].sort()]),
   d: [...s.del].sort(),

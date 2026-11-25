@@ -52,6 +52,21 @@ export function mergeRows(existing, incoming) {
   return { merged, added, read: incoming.length };
 }
 
+// Import che sostituisce: il CSV di Liftoff è lo storico completo, quindi per ogni giorno presente nel file
+// le righe già salvate vengono rimpiazzate (così modifiche ai carichi, serie cancellate e CSV con
+// precisioni diverse non lasciano righe doppie o vecchie). I giorni assenti dal file restano intatti.
+// `added` conta le serie davvero nuove, ignorando differenze di arrotondamento sotto 0,25 kg.
+const looseKey = r => `${r[0]}|${r[1]}|${Math.round((r[3] || 0) / 0.25)}|${r[4]}`;
+export function replaceByDate(existing, incoming) {
+  const dates = new Set(incoming.map(r => r[0]));
+  const have = new Map();
+  existing.forEach(r => have.set(looseKey(r), (have.get(looseKey(r)) || 0) + 1));
+  let added = 0;
+  incoming.forEach(r => { const k = looseKey(r); const n = have.get(k) || 0; if (n > 0) have.set(k, n - 1); else added++; });
+  const kept = existing.filter(r => !dates.has(r[0]));
+  return { merged: [...kept, ...incoming], added, read: incoming.length, dropped: existing.length - kept.length };
+}
+
 // ── Date ──────────────────────────────────────────────────────────────────────
 
 export const todayStr = () => {

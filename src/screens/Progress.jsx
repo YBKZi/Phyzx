@@ -16,7 +16,7 @@ const unitsFor = (names, unit) => {
 
 const RANGES = { '1m': 30, '3m': 91, '6m': 182, '1y': 365, all: null };
 const dayMs = s => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
-const STOP_FILL = { yellow: 'rgba(255,196,57,0.10)', orange: 'rgba(255,140,70,0.13)', red: 'rgba(255,79,94,0.16)' };
+const STOP_FILL = { yellow: 'rgba(255,200,45,0.26)', orange: 'rgba(255,128,50,0.30)', red: 'rgba(255,70,90,0.34)' };
 
 function ChartTip({ active, payload, label, series, unit, lang }) {
   if (!active || !payload || !payload.length) return null;
@@ -121,8 +121,8 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t })
         <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="bandGood" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#1FD17A" stopOpacity="0" /><stop offset="14%" stopColor="#1FD17A" stopOpacity="0.17" />
-              <stop offset="86%" stopColor="#1FD17A" stopOpacity="0.17" /><stop offset="100%" stopColor="#1FD17A" stopOpacity="0" />
+              <stop offset="0%" stopColor="#1FD17A" stopOpacity="0" /><stop offset="12%" stopColor="#1FD17A" stopOpacity="0.36" />
+              <stop offset="88%" stopColor="#1FD17A" stopOpacity="0.36" /><stop offset="100%" stopColor="#1FD17A" stopOpacity="0" />
             </linearGradient>
             {series.filter(s => strokes[s.name].stops.length).map(s => (
               <linearGradient key={`ln-${s.name}`} id={strokes[s.name].id} x1="0" y1="0" x2="1" y2="0">

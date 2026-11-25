@@ -62,6 +62,18 @@ export function buildAnalysis(model, today = todayStr()) {
   }
   const mIdx = new Map(months.map((m, i) => [m.key, i]));
   wk.forEach(w => { const i = mIdx.get(w.date.slice(0, 7)); if (i != null) months[i].workouts++; });
+  // allenamenti per mese su tutta la storia
+  const monthsAll = [];
+  {
+    const [fy, fm] = first.split('-').map(Number);
+    const n = (ty - fy) * 12 + (tm - fm);
+    for (let i = 0; i <= n; i++) {
+      const d = new Date(Date.UTC(fy, fm - 1 + i, 1));
+      monthsAll.push({ key: `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`, month: d.getUTCMonth(), year: d.getUTCFullYear(), workouts: 0 });
+    }
+    const idx = new Map(monthsAll.map((m, i) => [m.key, i]));
+    wk.forEach(w => { const i = idx.get(w.date.slice(0, 7)); if (i != null) monthsAll[i].workouts++; });
+  }
   const weekdays = [0, 0, 0, 0, 0, 0, 0];
   wk.forEach(w => { const [y, m, d] = w.date.split('-').map(Number); weekdays[(new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7]++; });
 
@@ -130,7 +142,7 @@ export function buildAnalysis(model, today = todayStr()) {
   const reps = buckets.map(b => ({ ...b, share: loadedSets ? b.n / loadedSets : 0 }));
 
   return {
-    overview, consistency, months, weekdays, groups, balance, records,
+    overview, consistency, months, monthsAll, weekdays, groups, balance, records,
     movers: { top: movers.slice(0, 5), bottom: movers.slice(-5).reverse().filter(m => m.pct < 0), avg: avgChange, count: movers.length, win },
     stagnant: stagnant.slice(0, 5), bests: bests.slice(0, 8), frequent, reps, loadedSets,
   };

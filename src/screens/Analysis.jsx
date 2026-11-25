@@ -93,6 +93,7 @@ const fmtSpan = days => (days >= 365 ? `${num(days / 365, 1)} anni` : days >= 60
 
 export default function Analysis({ model, unit }) {
   const [recRange, setRecRange] = useState('12m');
+  const [monRange, setMonRange] = useState('12m');
   const a = useMemo(() => buildAnalysis(model, todayStr()), [model]);
   if (!a) return null;
   const { overview: o, consistency: c, balance: b } = a;
@@ -114,8 +115,13 @@ export default function Analysis({ model, unit }) {
       </div>
 
       <Card>
-        <Title icon="bars" tone="#2F8CFF" sub="ultimi 12 mesi">Allenamenti al mese</Title>
-        <Columns highlightLast items={a.months.map(m => ({ key: m.key, label: MONTHS[m.month], value: m.workouts }))} />
+        <Title icon="bars" tone="#2F8CFF" sub={monRange === 'all' && a.monthsAll.length > 12 ? `${a.monthsAll.length} mesi · scorri` : 'ultimi 12 mesi'}>Allenamenti al mese</Title>
+        {a.monthsAll.length > 12 && (
+          <div style={{ marginBottom: 12 }}><Segmented small value={monRange} onChange={setMonRange} options={[{ value: '12m', label: '12 mesi' }, { value: 'all', label: 'Tutta la storia' }]} /></div>
+        )}
+        {monRange === 'all' && a.monthsAll.length > 12
+          ? <ScrollColumns items={a.monthsAll.map(m => ({ key: m.key, label: MONTHS[m.month], month: m.month, year: m.year, value: m.workouts }))} />
+          : <Columns highlightLast items={a.months.map(m => ({ key: m.key, label: MONTHS[m.month], value: m.workouts }))} />}
       </Card>
 
       <Card>

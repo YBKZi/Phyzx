@@ -203,8 +203,8 @@ export function exerciseSummary(hist, today = todayStr()) {
 }
 
 // Verso il prime: confronta il livello dell'ultima seduta con il passato.
-// Cerca l'ultima volta in cui sei salito a quel livello (tolleranza 2%) prima del record, partendo
-// da sotto (almeno 5% in meno: una seduta storta non conta come ripartenza), e misura quanto tempo
+// Cerca l'ultima volta in cui sei salito a quel livello (fascia del 5%, circa una ripetizione) prima del record,
+// partendo da sotto (calo di almeno 10%: una seduta storta non conta come ripartenza), e misura quanto tempo
 // e quante sedute sono servite da lì per arrivare al record.
 export function primeEstimate(hist, today = todayStr()) {
   if (!hist || hist.length < 2) return null;
@@ -216,8 +216,11 @@ export function primeEstimate(hist, today = todayStr()) {
   const tol = last.bw ? 0 : 0.02;
   const ratio = last.e1rm / best.e1rm;
   if (bi === hist.length - 1 || last.e1rm >= best.e1rm * (1 - tol)) return { prime: true, last, best, ratio: Math.min(1, ratio) };
-  const level = last.e1rm * (1 - tol);
-  const floor = last.bw ? level - 1 : level * 0.95;
+  // "A quel livello" è una fascia, non un valore preciso: una serie in meno (es. 20 kg × 5 invece di × 6)
+  // conta ancora come stesso livello; la ripartenza si azzera solo con un calo netto (~10%).
+  const band = last.bw ? Math.max(1, Math.round(last.e1rm * 0.05)) : last.e1rm * 0.05;
+  const level = last.e1rm - band;
+  const floor = last.bw ? last.e1rm - Math.max(3, Math.round(last.e1rm * 0.12)) : last.e1rm * 0.9;
   let li = -1, below = true;
   for (let i = 0; i < bi; i++) {
     const e = hist[i].e1rm;

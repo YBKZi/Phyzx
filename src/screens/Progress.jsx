@@ -52,7 +52,7 @@ function PrimeCard({ names, model, colorOf, exLang, lang }) {
             {!est.prime && est.from && (
               <>
                 <div className="prime-eta"><b>~ {durLong(lang, est.days)}</b><span>circa {est.sessions} {est.sessions === 1 ? 'seduta' : 'sedute'} · verso {monthYearLong(lang, est.eta)}</span></div>
-                <p className="prime-txt">Eri già a questo livello il {dateMedium(lang, est.from.date)}: da lì al record sono passati {durLong(lang, est.days)} e {est.sessions} {est.sessions === 1 ? 'seduta' : 'sedute'}.</p>
+                <p className="prime-txt">L'ultima volta che sei salito a questo livello è stato il {dateMedium(lang, est.from.date)}: da lì al record sono passati {durLong(lang, est.days)} e {est.sessions} {est.sessions === 1 ? 'seduta' : 'sedute'}.</p>
               </>
             )}
           </div>

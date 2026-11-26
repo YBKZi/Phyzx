@@ -243,36 +243,6 @@ export function exerciseSummary(hist, today = todayStr()) {
   };
 }
 
-// ── Previsione del prossimo workout ──────────────────────────────────────────
-// Da backtest sui dati reali l'1RM della sessione successiva oscilla attorno all'ultimo (errore
-// mediano ~5%): nessuna tendenza batte "ripeti l'ultimo". Cambia solo dopo uno stop lungo (oltre
-// 3 settimane la sessione di ripresa è in media ~8% più bassa). L'ampiezza dell'intervallo è
-// l'errore mediano storico dell'esercizio stesso.
-export function nextPrediction(hist, today = todayStr()) {
-  if (!hist || hist.length < 2) return null;
-  const last = hist[hist.length - 1];
-  const gap = Math.max(0, daysBetween(last.date, today));
-  const lerp = (x, x0, x1, y0, y1) => y0 + (y1 - y0) * Math.min(1, Math.max(0, (x - x0) / (x1 - x0)));
-  const adj = gap <= 21 ? 0 : lerp(gap, 21, 56, 0, -0.08);
-  const e = last.e1rm * (1 + adj);
-  const errs = [];
-  for (let i = Math.max(1, hist.length - 12); i < hist.length; i++) {
-    if (hist[i].bw === hist[i - 1].bw && hist[i].e1rm > 0) errs.push(Math.abs(hist[i - 1].e1rm - hist[i].e1rm) / hist[i].e1rm);
-  }
-  errs.sort((a, b) => a - b);
-  const m = errs.length ? (errs.length % 2 ? errs[(errs.length - 1) / 2] : (errs[errs.length / 2 - 1] + errs[errs.length / 2]) / 2) : 0.05;
-  const err = Math.min(0.07, Math.max(0.03, m));
-  const lo = e * (1 - err), hi = e * (1 + err);
-  if (last.bw) return { bw: true, e1rm: e, lo, hi, reps: Math.max(1, Math.round(e)), repsLo: Math.max(1, Math.round(lo)), repsHi: Math.max(1, Math.round(hi)), gap };
-  const repsAt = (E, kg) => Math.max(1, Math.round(30 * (E / kg - 1)));
-  let kg = last.topKg;
-  const loads = [...new Set(hist.slice(-12).map(s => Math.round(s.topKg * 100) / 100))].sort((a, b) => a - b);
-  let reps = repsAt(e, kg);
-  if (reps > 14) { const up = loads.find(l => l > kg + 0.3); if (up) { kg = up; reps = repsAt(e, kg); } }
-  else if (reps < 3 && e > 0) { const down = [...loads].reverse().find(l => l < kg - 0.3); if (down) { kg = down; reps = repsAt(e, kg); } }
-  return { bw: false, e1rm: e, lo, hi, kg, reps, repsLo: repsAt(lo, kg), repsHi: repsAt(hi, kg), gap };
-}
-
 // ── Verso il prime ───────────────────────────────────────────────────────────
 // Recuperare un prime già avuto è più veloce che raggiungerlo la prima volta. Quindi:
 //  1) se in passato hai già ripreso un tuo picco dopo un calo, partendo dal livello di oggi,

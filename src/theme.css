@@ -278,6 +278,7 @@ input[type="range"] { accent-color: var(--accent); }
 .prime-eta span { font-size: 12.5px; color: var(--text-2); }
 .prime-txt { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-2); }
 
+.legend .dash { width: 16px; height: 0; border-top: 2px dashed rgba(255,255,255,.8); display: inline-block; }
 .legend .dot.ring { background: transparent; box-shadow: 0 0 0 2px #fff inset; }
 
 /* ── Scorrimento nel tempo del grafico ────────────────────────────────── */

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
+import { ComposedChart, Area, ReferenceLine, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { translateExercise, translateGroup, GROUP_COLOR, unitFor } from '../lib/core.js';
 import { exerciseSummary, primeEstimate, trainingPeriods, todayStr, addDays, daysBetween } from '../lib/stats.js';
 import { topSetText, makeT, dateShort, dateDay, dateMonthYear, dateMedium, agoLong, durLong, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
@@ -170,6 +170,35 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t, s
     return { data: [...byTs.values()].sort((a, b) => a.ts - b.ts), lo, hi };
   }, [selected, model, unit, d0, d1, levelTs]);
 
+  // Linee di tendenza: una retta (minimi quadrati) per ogni periodo di allenamento continuo, cioè tra due pause > 14 giorni.
+  // Servono almeno 3 sessioni; la retta è calcolata sull'intero periodo e poi ritagliata alla finestra visibile.
+  const trends = useMemo(() => {
+    const out = [];
+    series.forEach(s => {
+      const h = model.history[s.name];
+      const groups = [];
+      h.forEach((p, i) => {
+        if (i === 0 || (p.ts - h[i - 1].ts) / 86400000 > 14) groups.push([]);
+        groups[groups.length - 1].push(p);
+      });
+      groups.forEach((g, gi) => {
+        if (g.length < 3) return;
+        const t0 = g[0].ts, t1 = g[g.length - 1].ts;
+        if (t1 < d0 || t0 > d1) return;
+        const xs = g.map(p => (p.ts - t0) / 86400000), ys = g.map(p => (s.bw ? p.e1rm : wv(p.e1rm, s.u)));
+        const n = xs.length, mx = xs.reduce((a, v) => a + v, 0) / n, my = ys.reduce((a, v) => a + v, 0) / n;
+        const den = xs.reduce((a, v) => a + (v - mx) ** 2, 0);
+        if (!den) return;
+        const m = xs.reduce((a, v, i) => a + (v - mx) * (ys[i] - my), 0) / den;
+        const at = ts => my + m * ((ts - t0) / 86400000 - mx);
+        const a = Math.max(t0, d0), b = Math.min(t1, d1);
+        if (b <= a) return;
+        out.push({ key: `${s.name}-${gi}`, color: s.color, seg: [{ x: a, y: at(a) }, { x: b, y: at(b) }], up: m >= 0 });
+      });
+    });
+    return out;
+  }, [selected, model, unit, d0, d1]);
+
   const periods = useMemo(() => (bands ? trainingPeriods(model.raw) : []), [bands, model]);
   const span = hi - lo || hi * 0.1 || 1;
   // più aria sotto e sopra: con scale troppo strette anche un salto da 2,5 kg sembra una parete
@@ -258,6 +287,9 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t, s
                 ? <circle key={`${s.name}-${p.index}`} cx={p.cx} cy={p.cy} r="4" fill="#FFC439" stroke="#000000" strokeWidth="1.5" />
                 : <circle key={`${s.name}-${p.index}`} cx={p.cx} cy={p.cy} r="2" fill={s.color} />)}
               activeDot={{ r: 5, stroke: '#000000', strokeWidth: 2, fill: s.color }} />
+          ))}
+          {trends.map(tr => (
+            <ReferenceLine key={tr.key} segment={tr.seg} stroke={single ? '#FFFFFF' : tr.color} strokeOpacity={single ? 0.8 : 0.95} strokeWidth={1.8} strokeDasharray="6 5" ifOverflow="visible" />
           ))}
         </ComposedChart>
       </ResponsiveContainer>
@@ -493,6 +525,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
               <span><i className="dot" style={{ background: COLORS.warn, opacity: .8 }} />{t('legendPause')}</span>
               <span><i className="dot" style={{ background: COLORS.down, opacity: .8 }} />{t('legendStop')}</span>
               <span><i className="dot" style={{ background: '#FFC439' }} />{t('record')}</span>
+              <span><i className="dash" />Trend</span>
               {hasLevel && <span><i className="dot ring" />Stesso livello di oggi</span>}
             </div>
             <button className="pill" onClick={() => setBands(b => !b)} style={{ color: bands ? COLORS.accent : undefined, background: bands ? 'rgba(47,140,255,.16)' : undefined }}>{bands ? t('bandsOn') : t('bandsOff')}</button>

@@ -408,7 +408,8 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
   const [favs, setFavs] = useState(() => loadFavs(profileId));
   // all'apertura: il primo esercizio della scrollina (primo preferito nell'ordine dei chip), altrimenti il primo in assoluto
   const [selected, setSelected] = useState(() => {
-    const first = model.exerciseList.find(e => favs.includes(e.name)) || model.exerciseList[0];
+    const byRecency = (x, y) => y.last.localeCompare(x.last) || x.lastPos - y.lastPos || y.sessions - x.sessions || x.name.localeCompare(y.name);
+    const first = model.exerciseList.filter(e => favs.includes(e.name)).sort(byRecency)[0] || model.exerciseList[0];
     return first ? [first.name] : [];
   });
   const [query, setQuery] = useState('');

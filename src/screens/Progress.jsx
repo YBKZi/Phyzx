@@ -2,11 +2,18 @@ import React, { useMemo, useState } from 'react';
 import { ComposedChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { translateExercise, translateGroup, GROUP_COLOR, unitFor } from '../lib/core.js';
 import { exerciseSummary, primeEstimate, nextPrediction, trainingPeriods, todayStr, addDays, daysBetween } from '../lib/stats.js';
-import { topSetText, makeT, dateShort, dateDay, dateMonthYear, dateMedium, agoLong, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
+import { topSetText, makeT, dateShort, dateDay, dateMonthYear, dateMedium, agoLong, durLong, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
 import { Card, Label, Stat, Delta, DeltaPill, Hero, CardTitle, CountUp, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
 import PageHeader from '../ui/PageHeader.jsx';
 import { keyFor, FAV_BASE } from '../lib/profiles.js';
 import { touch } from '../lib/sync.js';
+
+// Pausa tra due sessioni: settimane fino a 2 mesi, poi mesi/anni
+function pauseText(lang, n) {
+  const it = lang !== 'en';
+  if (n < 60) { const w = Math.round(n / 7); return it ? `${w} settimane di pausa` : `${w} weeks off`; }
+  return it ? `${durLong(lang, n)} di pausa` : `${durLong(lang, n)} off`;
+}
 
 // Sotto la scheda dell'esercizio: quando è stato fatto l'ultimo record e con quale serie
 function RecordLine({ sum, unit, lang, t }) {
@@ -492,13 +499,22 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
           <table className="table">
             <thead><tr><th>{t('date')}</th><th>{t('topSet')}</th><th>{t('est1rm')}</th></tr></thead>
             <tbody>
-              {[...hist].reverse().slice(0, 10).map(s => (
-                <tr key={s.date}>
-                  <td>{dateShort(lang, s.date)}</td>
-                  <td style={{ color: 'var(--text)', textAlign: 'left' }}>{topSetText({ name: primary, bw: s.bw, topKg: s.topKg, topReps: s.topReps }, unit, t)} {s.isPR && <PRBadge label={t('pr')} />}</td>
-                  <td><span style={{ marginRight: 8 }}>{s.bw ? '' : wu(s.e1rm, unit, primary)}</span><Delta v={s.deltaPct} digits={1} compact /></td>
-                </tr>
-              ))}
+              {[...hist].reverse().slice(0, 10).map(s => {
+                const gap = s.prev ? daysBetween(s.prev.date, s.date) : 0;
+                const paused = gap > 14;
+                return (
+                  <React.Fragment key={s.date}>
+                    <tr>
+                      <td>{dateShort(lang, s.date)}</td>
+                      <td style={{ color: 'var(--text)', textAlign: 'left' }}>{topSetText({ name: primary, bw: s.bw, topKg: s.topKg, topReps: s.topReps }, unit, t)} {s.isPR && <PRBadge label={t('pr')} />}</td>
+                      <td><span style={{ marginRight: 8 }}>{s.bw ? '' : wu(s.e1rm, unit, primary)}</span><span style={paused ? { opacity: 0.45 } : undefined}><Delta v={s.deltaPct} digits={1} compact /></span></td>
+                    </tr>
+                    {paused && (
+                      <tr className="gap-row"><td colSpan={3}><span>{pauseText(lang, gap)}</span></td></tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </Card>

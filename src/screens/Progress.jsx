@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ComposedChart, Area, ReferenceLine, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
+import { ComposedChart, Area, Customized, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { translateExercise, translateGroup, GROUP_COLOR, unitFor } from '../lib/core.js';
 import { exerciseSummary, primeEstimate, trainingPeriods, todayStr, addDays, daysBetween } from '../lib/stats.js';
 import { topSetText, makeT, dateShort, dateDay, dateMonthYear, dateMedium, agoLong, durLong, wu, wv, unitLabelFor, num } from '../lib/i18n.js';
@@ -131,6 +131,63 @@ function Crosshair({ points, top, height, left, width, payload, domain }) {
   );
 }
 
+// Regressione locale robusta (lineare, pesi tricubici, 2 iterazioni bisquare). xs in giorni crescenti.
+function loess(xs, ys) {
+  const n = xs.length;
+  // Banda larga: la tendenza deve restare più liscia dei dati, non ricalcarli
+  const span = n <= 12 ? 1 : n <= 24 ? 0.85 : 0.7;
+  const q = Math.min(n, Math.max(3, Math.ceil(span * n)));
+  const med = a => { const v = [...a].sort((x, y) => x - y); const m = v.length; return m % 2 ? v[(m - 1) / 2] : (v[m / 2 - 1] + v[m / 2]) / 2; };
+  const lo = Math.min(...ys), hi = Math.max(...ys), pad = (hi - lo) * 0.06;
+  const at = (x0, rw) => {
+    const d = xs.map(x => Math.abs(x - x0));
+    const h = Math.max(1, 1.25 * [...d].sort((a, b) => a - b)[q - 1]);
+    let sw = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
+    for (let i = 0; i < n; i++) {
+      const u = d[i] / h; if (u >= 1) continue;
+      const w = (1 - u ** 3) ** 3 * rw[i]; if (w <= 0) continue;
+      sw += w; sx += w * xs[i]; sy += w * ys[i]; sxx += w * xs[i] * xs[i]; sxy += w * xs[i] * ys[i];
+    }
+    if (!sw) return ys[d.indexOf(Math.min(...d))];
+    const den = sw * sxx - sx * sx;
+    const v = Math.abs(den) < 1e-9 ? sy / sw : (sy / sw) + ((sw * sxy - sx * sy) / den) * (x0 - sx / sw);
+    return Math.min(hi + pad, Math.max(lo - pad, v));
+  };
+  let rw = new Array(n).fill(1);
+  for (let it = 0; it < 2 && n > 5; it++) {
+    const res = xs.map((x, i) => ys[i] - at(x, rw));
+    const m6 = 6 * med(res.map(Math.abs));
+    if (!m6) break;
+    rw = res.map(r => { const u = Math.abs(r) / m6; return u >= 1 ? 0 : (1 - u * u) ** 2; });
+  }
+  return x => at(x, rw);
+}
+
+// Disegna le curve di tendenza usando le scale del grafico, ritagliate all'area di tracciamento
+function TrendCurves({ trends, single, xAxisMap, yAxisMap, offset }) {
+  if (!xAxisMap || !yAxisMap || !trends.length) return null;
+  const xs = Object.values(xAxisMap)[0].scale, ys = Object.values(yAxisMap)[0].scale;
+  const id = 'trend-clip';
+  return (
+    <g pointerEvents="none">
+      <defs><clipPath id={id}><rect x={offset.left} y={offset.top - 2} width={offset.width} height={offset.height + 4} /></clipPath></defs>
+      <g clipPath={`url(#${id})`} fill="none" strokeLinecap="round" strokeLinejoin="round">
+        {trends.map(tr => {
+          const d = tr.pts.map((p, i) => `${i ? 'L' : 'M'}${xs(p.x).toFixed(1)},${ys(p.y).toFixed(1)}`).join('');
+          return (
+            <g key={tr.key}>
+              {single
+                ? <path d={d} stroke="#000" strokeOpacity="0.28" strokeWidth="3.6" />
+                : <path d={d} stroke={tr.color} strokeOpacity="0.6" strokeWidth="4.4" />}
+              <path d={d} stroke="#FFFFFF" strokeOpacity="0.92" strokeWidth="1.8" strokeDasharray="7 5" />
+            </g>
+          );
+        })}
+      </g>
+    </g>
+  );
+}
+
 function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t, shift = 0, setShift }) {
   const today = todayStr();
   const dragRef = React.useRef(null);
@@ -170,8 +227,9 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t, s
     return { data: [...byTs.values()].sort((a, b) => a.ts - b.ts), lo, hi };
   }, [selected, model, unit, d0, d1, levelTs]);
 
-  // Linee di tendenza: una retta (minimi quadrati) per ogni periodo di allenamento continuo, cioè tra due pause > 14 giorni.
-  // Servono almeno 3 sessioni; la retta è calcolata sull'intero periodo e poi ritagliata alla finestra visibile.
+  // Curve di tendenza: una per ogni periodo di allenamento continuo (pause > 14 giorni), con almeno 3 sessioni.
+  // Regressione locale robusta (LOESS con pesi tricubici e iterazioni bisquare): segue salita, plateau e calo
+  // senza farsi trascinare da una sessione storta. Calcolata sull'intero periodo, poi ritagliata alla finestra.
   const trends = useMemo(() => {
     const out = [];
     series.forEach(s => {
@@ -186,14 +244,16 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t, s
         const t0 = g[0].ts, t1 = g[g.length - 1].ts;
         if (t1 < d0 || t0 > d1) return;
         const xs = g.map(p => (p.ts - t0) / 86400000), ys = g.map(p => (s.bw ? p.e1rm : wv(p.e1rm, s.u)));
-        const n = xs.length, mx = xs.reduce((a, v) => a + v, 0) / n, my = ys.reduce((a, v) => a + v, 0) / n;
-        const den = xs.reduce((a, v) => a + (v - mx) ** 2, 0);
-        if (!den) return;
-        const m = xs.reduce((a, v, i) => a + (v - mx) * (ys[i] - my), 0) / den;
-        const at = ts => my + m * ((ts - t0) / 86400000 - mx);
-        const a = Math.max(t0, d0), b = Math.min(t1, d1);
-        if (b <= a) return;
-        out.push({ key: `${s.name}-${gi}`, color: s.color, seg: [{ x: a, y: at(a) }, { x: b, y: at(b) }], up: m >= 0 });
+        const fit = loess(xs, ys);
+        const dur = xs[xs.length - 1];
+        const nPts = Math.max(10, Math.min(80, Math.round(dur / 2) + 1));
+        const pts = [];
+        for (let k = 0; k <= nPts; k++) {
+          const x = (dur * k) / nPts, ts = t0 + x * 86400000;
+          if (ts < d0 || ts > d1) continue;
+          pts.push({ x: ts, y: fit(x) });
+        }
+        if (pts.length > 1) out.push({ key: `${s.name}-${gi}`, color: s.color, pts });
       });
     });
     return out;
@@ -288,9 +348,7 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t, s
                 : <circle key={`${s.name}-${p.index}`} cx={p.cx} cy={p.cy} r="2" fill={s.color} />)}
               activeDot={{ r: 5, stroke: '#000000', strokeWidth: 2, fill: s.color }} />
           ))}
-          {trends.map(tr => (
-            <ReferenceLine key={tr.key} segment={tr.seg} stroke={single ? '#FFFFFF' : tr.color} strokeOpacity={single ? 0.8 : 0.95} strokeWidth={1.8} strokeDasharray="6 5" ifOverflow="visible" />
-          ))}
+          <Customized component={<TrendCurves trends={trends} single={single} />} />
         </ComposedChart>
       </ResponsiveContainer>
     </div>

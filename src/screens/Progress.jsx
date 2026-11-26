@@ -6,6 +6,7 @@ import { topSetText, makeT, dateShort, dateDay, dateMonthYear, dateMedium, agoLo
 import { Card, Label, Stat, Delta, DeltaPill, Hero, CardTitle, CountUp, Segmented, Sparkline, PRBadge, Icon, COLORS } from '../ui/kit.jsx';
 import PageHeader from '../ui/PageHeader.jsx';
 import { keyFor, FAV_BASE } from '../lib/profiles.js';
+import { trendsFor, slopeClass } from '../lib/trend.js';
 import { touch } from '../lib/sync.js';
 
 // Pausa tra due sessioni: settimane fino a 2 mesi, poi mesi/anni
@@ -100,13 +101,18 @@ function ChartTip({ active, payload, label, series, unit, lang }) {
         const row = payload.find(p => p.dataKey === s.name);
         if (!row || row.value == null) return null;
         return (
-          <div key={s.name} className="t-row">
+          <React.Fragment key={s.name}>
+          <div className="t-row">
             <span className="dot" style={{ background: s.color }} />
             <span className="row" style={{ gap: 8 }}>
               <b>{num(row.value, 1)}{s.bw ? '' : s.u}</b>
               {row.payload[`${s.name}__delta`] != null && <Delta v={row.payload[`${s.name}__delta`]} digits={1} />}
             </span>
           </div>
+          {row.payload[`${s.name}__tw`] != null && (
+            <div className={`t-trend ${row.payload[`${s.name}__tc`]}`}>Trend {row.payload[`${s.name}__tw`] >= 0 ? '+' : '−'}{num(Math.abs(row.payload[`${s.name}__tw`]), s.bw || Math.abs(row.payload[`${s.name}__tw`]) >= 1 ? 1 : 2)} {s.bw ? 'rip.' : s.u}/sett.</div>
+          )}
+          </React.Fragment>
         );
       })}
       {series.length === 1 && payload[0] && payload[0].payload[`${series[0].name}__d`] ? <div className="muted mono" style={{ fontSize: 10.5, marginTop: 4 }}>{payload[0].payload[`${series[0].name}__d`]}</div> : null}
@@ -131,58 +137,19 @@ function Crosshair({ points, top, height, left, width, payload, domain }) {
   );
 }
 
-// Regressione locale robusta (lineare, pesi tricubici, 2 iterazioni bisquare). xs in giorni crescenti.
-function loess(xs, ys) {
-  const n = xs.length;
-  // Banda larga: la tendenza deve restare più liscia dei dati, non ricalcarli
-  const span = n <= 12 ? 1 : n <= 24 ? 0.85 : 0.7;
-  const q = Math.min(n, Math.max(3, Math.ceil(span * n)));
-  const med = a => { const v = [...a].sort((x, y) => x - y); const m = v.length; return m % 2 ? v[(m - 1) / 2] : (v[m / 2 - 1] + v[m / 2]) / 2; };
-  const lo = Math.min(...ys), hi = Math.max(...ys), pad = (hi - lo) * 0.06;
-  const at = (x0, rw) => {
-    const d = xs.map(x => Math.abs(x - x0));
-    const h = Math.max(1, 1.25 * [...d].sort((a, b) => a - b)[q - 1]);
-    let sw = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
-    for (let i = 0; i < n; i++) {
-      const u = d[i] / h; if (u >= 1) continue;
-      const w = (1 - u ** 3) ** 3 * rw[i]; if (w <= 0) continue;
-      sw += w; sx += w * xs[i]; sy += w * ys[i]; sxx += w * xs[i] * xs[i]; sxy += w * xs[i] * ys[i];
-    }
-    if (!sw) return ys[d.indexOf(Math.min(...d))];
-    const den = sw * sxx - sx * sx;
-    const v = Math.abs(den) < 1e-9 ? sy / sw : (sy / sw) + ((sw * sxy - sx * sy) / den) * (x0 - sx / sw);
-    return Math.min(hi + pad, Math.max(lo - pad, v));
-  };
-  let rw = new Array(n).fill(1);
-  for (let it = 0; it < 2 && n > 5; it++) {
-    const res = xs.map((x, i) => ys[i] - at(x, rw));
-    const m6 = 6 * med(res.map(Math.abs));
-    if (!m6) break;
-    rw = res.map(r => { const u = Math.abs(r) / m6; return u >= 1 ? 0 : (1 - u * u) ** 2; });
-  }
-  return x => at(x, rw);
-}
-
-// Disegna le curve di tendenza usando le scale del grafico, ritagliate all'area di tracciamento
-function TrendCurves({ trends, single, xAxisMap, yAxisMap, offset }) {
-  if (!xAxisMap || !yAxisMap || !trends.length) return null;
+// Curve di tendenza (vedi lib/trend.js), colorate per pendenza locale: verde sale, rosso scende, bianco stabile
+const DAY_MS = 86400000;
+const TREND_COLOR = { up: '#1FD17A', down: '#FF4F5E', flat: '#FFFFFF' };
+function TrendCurves({ runs, single, xAxisMap, yAxisMap, offset }) {
+  if (!xAxisMap || !yAxisMap || !runs.length) return null;
   const xs = Object.values(xAxisMap)[0].scale, ys = Object.values(yAxisMap)[0].scale;
-  const id = 'trend-clip';
+  const path = pts => pts.map((p, i) => `${i ? 'L' : 'M'}${xs(p.ts).toFixed(1)},${ys(p.y).toFixed(1)}`).join('');
   return (
     <g pointerEvents="none">
-      <defs><clipPath id={id}><rect x={offset.left} y={offset.top - 2} width={offset.width} height={offset.height + 4} /></clipPath></defs>
-      <g clipPath={`url(#${id})`} fill="none" strokeLinecap="round" strokeLinejoin="round">
-        {trends.map(tr => {
-          const d = tr.pts.map((p, i) => `${i ? 'L' : 'M'}${xs(p.x).toFixed(1)},${ys(p.y).toFixed(1)}`).join('');
-          return (
-            <g key={tr.key}>
-              {single
-                ? <path d={d} stroke="#000" strokeOpacity="0.28" strokeWidth="3.6" />
-                : <path d={d} stroke={tr.color} strokeOpacity="0.6" strokeWidth="4.4" />}
-              <path d={d} stroke="#FFFFFF" strokeOpacity="0.92" strokeWidth="1.8" strokeDasharray="7 5" />
-            </g>
-          );
-        })}
+      <defs><clipPath id="trend-clip"><rect x={offset.left} y={offset.top - 2} width={offset.width} height={offset.height + 4} /></clipPath></defs>
+      <g clipPath="url(#trend-clip)" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        {runs.map(r => <path key={`h${r.key}`} d={path(r.pts)} stroke={single ? '#000' : r.color} strokeOpacity={single ? 0.35 : 0.55} strokeWidth={single ? 4 : 4.6} />)}
+        {runs.map(r => <path key={r.key} d={path(r.pts)} stroke={TREND_COLOR[r.cls]} strokeOpacity="0.95" strokeWidth="2" strokeDasharray="7 5" />)}
       </g>
     </g>
   );
@@ -207,6 +174,8 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t, s
   const startDate = W == null ? firstDate : (addDays(endStr, -W) < firstDate ? firstDate : addDays(endStr, -W));
   const d0 = dayMs(startDate), d1 = dayMs(endStr);
 
+  const trend = useMemo(() => Object.fromEntries(series.map(s => [s.name, trendsFor(model.history[s.name], p => (s.bw ? p.e1rm : wv(p.e1rm, s.u)))])), [selected, model, unit]);
+
   const { data, lo, hi } = useMemo(() => {
     const byTs = new Map();
     let lo = Infinity, hi = -Infinity;
@@ -220,49 +189,44 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t, s
         row[`${s.name}__pr`] = p.isPR;
         row[`${s.name}__lvl`] = levelTs[s.name] != null && p.ts === levelTs[s.name];
         row[`${s.name}__delta`] = p.deltaPct;
+        const tw = trend[s.name].slopeAt[p.ts];
+        row[`${s.name}__tw`] = tw ? tw.wk : null;
+        row[`${s.name}__tc`] = tw ? slopeClass(tw.wk, tw.ref) : null;
         row[`${s.name}__d`] = p.bw ? `${p.topReps} ${t('reps')}` : `${wu(p.topKg, s.u)} × ${p.topReps}`;
         lo = Math.min(lo, v); hi = Math.max(hi, v);
       });
     });
     return { data: [...byTs.values()].sort((a, b) => a.ts - b.ts), lo, hi };
-  }, [selected, model, unit, d0, d1, levelTs]);
+  }, [selected, model, unit, d0, d1, levelTs, trend]);
 
-  // Curve di tendenza: una per ogni periodo di allenamento continuo (pause > 14 giorni), con almeno 3 sessioni.
-  // Regressione locale robusta (LOESS con pesi tricubici e iterazioni bisquare): segue salita, plateau e calo
-  // senza farsi trascinare da una sessione storta. Calcolata sull'intero periodo, poi ritagliata alla finestra.
-  const trends = useMemo(() => {
+  // tratti della curva visibili nella finestra, spezzati dove cambia la direzione
+  const runs = useMemo(() => {
     const out = [];
-    series.forEach(s => {
-      const h = model.history[s.name];
-      const groups = [];
-      h.forEach((p, i) => {
-        if (i === 0 || (p.ts - h[i - 1].ts) / 86400000 > 14) groups.push([]);
-        groups[groups.length - 1].push(p);
-      });
-      groups.forEach((g, gi) => {
-        if (g.length < 3) return;
-        const t0 = g[0].ts, t1 = g[g.length - 1].ts;
-        if (t1 < d0 || t0 > d1) return;
-        const xs = g.map(p => (p.ts - t0) / 86400000), ys = g.map(p => (s.bw ? p.e1rm : wv(p.e1rm, s.u)));
-        const fit = loess(xs, ys);
-        const dur = xs[xs.length - 1];
-        const nPts = Math.max(10, Math.min(80, Math.round(dur / 2) + 1));
-        const pts = [];
-        for (let k = 0; k <= nPts; k++) {
-          const x = (dur * k) / nPts, ts = t0 + x * 86400000;
-          if (ts < d0 || ts > d1) continue;
-          pts.push({ x: ts, y: fit(x) });
+    series.forEach(s => trend[s.name].periods.forEach((pd, pi) => {
+      if (pd.t1 < d0 || pd.t0 > d1) return;
+      let cur = null;
+      pd.pts.forEach((p, k) => {
+        if (p.ts < d0 - DAY_MS || p.ts > d1 + DAY_MS) return;
+        const cls = slopeClass(p.wk, p.y);
+        if (!cur || cur.cls !== cls) {
+          const prev = cur && cur.pts[cur.pts.length - 1];
+          cur = { key: `${s.name}-${pi}-${k}`, color: s.color, cls, pts: prev ? [prev] : [] };
+          out.push(cur);
         }
-        if (pts.length > 1) out.push({ key: `${s.name}-${gi}`, color: s.color, pts });
+        cur.pts.push(p);
       });
-    });
-    return out;
-  }, [selected, model, unit, d0, d1]);
+    }));
+    return out.filter(r => r.pts.length > 1);
+  }, [trend, d0, d1]);
 
   const periods = useMemo(() => (bands ? trainingPeriods(model.raw) : []), [bands, model]);
   const span = hi - lo || hi * 0.1 || 1;
-  // più aria sotto e sopra: con scale troppo strette anche un salto da 2,5 kg sembra una parete
-  const yDomain = data.length ? [Math.max(0, Math.floor(lo - Math.max(span * 0.25, hi * 0.25))), Math.ceil(hi + Math.max(span * 0.2, hi * 0.05))] : [0, 100];
+  // scala verticale ampia: i salti di carico restano proporzionati e la curva non diventa una parete
+  const rawLo = Math.max(0, lo - Math.max(span, hi * 0.4)), rawHi = hi + Math.max(span * 0.6, hi * 0.1);
+  // estremi e tacche su numeri tondi (5, 10, 20 …) invece di valori casuali
+  const yStep = (() => { const r = (rawHi - rawLo) / 4 || 1, mag = 10 ** Math.floor(Math.log10(r)); return ([1, 2, 2.5, 5, 10].find(m => m * mag >= r) || 10) * mag; })();
+  const yDomain = data.length ? [Math.floor(rawLo / yStep) * yStep, Math.ceil(rawHi / yStep) * yStep] : [0, 100];
+  const yTicks = data.length ? Array.from({ length: Math.round((yDomain[1] - yDomain[0]) / yStep) + 1 }, (_, i) => yDomain[0] + i * yStep) : undefined;
   const single = series.length === 1;
   // unità sull'asse: solo se tutte le serie con carico usano la stessa unità
   const axisUnits = [...new Set(series.filter(s => !s.bw).map(s => s.u))];
@@ -336,7 +300,7 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t, s
           })}
           <XAxis dataKey="ts" type="number" scale="time" domain={[d0, d1]} tickCount={range === 'all' || range === '1y' ? 4 : 5} minTickGap={34} tickFormatter={ts => (range === '1m' || range === '3m' ? dateDay(lang, new Date(ts).toISOString().slice(0, 10)) : range === '6m' ? dateMonthYear(lang, ts).split(' ')[0] : dateMonthYear(lang, ts))}
             axisLine={false} tickLine={false} tickMargin={8} allowDataOverflow />
-          <YAxis domain={yDomain} width={axisUnit ? 58 : 44} tickFormatter={v => (axisUnit ? `${v} ${axisUnit}` : v)} axisLine={false} tickLine={false} tickCount={5} allowDataOverflow />
+          <YAxis domain={yDomain} ticks={yTicks} width={axisUnit ? 58 : 44} tickFormatter={v => (axisUnit ? `${v} ${axisUnit}` : v)} axisLine={false} tickLine={false} allowDataOverflow />
           <Tooltip active={dragging ? false : undefined} cursor={<Crosshair domain={yDomain} />} content={<ChartTip series={series} unit={unit} lang={lang} />} />
           {series.map(s => (
             <Area key={s.name} type="monotone" dataKey={s.name} stroke={strokes[s.name].stops.length ? `url(#${strokes[s.name].id})` : s.color} strokeWidth={2.6} fill={`url(#ar-${s.color.slice(1)})`}
@@ -348,7 +312,7 @@ function ProgressChart({ model, selected, lang, exLang, unit, range, bands, t, s
                 : <circle key={`${s.name}-${p.index}`} cx={p.cx} cy={p.cy} r="2" fill={s.color} />)}
               activeDot={{ r: 5, stroke: '#000000', strokeWidth: 2, fill: s.color }} />
           ))}
-          <Customized component={<TrendCurves trends={trends} single={single} />} />
+          <Customized component={<TrendCurves runs={runs} single={single} />} />
         </ComposedChart>
       </ResponsiveContainer>
     </div>

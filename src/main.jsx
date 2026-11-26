@@ -56,3 +56,18 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </ErrorBoundary>
   </React.StrictMode>
 );
+
+// Aggiornamenti: quando una nuova versione prende il controllo la pagina si ricarica da sola (una volta),
+// così non serve aprire l'app due volte per vedere le modifiche.
+if ('serviceWorker' in navigator) {
+  const had = !!navigator.serviceWorker.controller;
+  let done = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!had || done) return;
+    done = true;
+    window.location.reload();
+  });
+  const check = () => navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {});
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+  window.addEventListener('load', check);
+}

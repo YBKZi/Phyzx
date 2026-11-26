@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      workbox: { importScripts: ['push-sw.js'] },
+      workbox: { importScripts: ['push-sw.js'], skipWaiting: true, clientsClaim: true },
       includeAssets: ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'Phyzx',

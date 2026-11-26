@@ -426,6 +426,39 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
   const heroSum = primary ? exerciseSummary(model.history[primary]) : null;
   const heroU = primary ? unitFor(primary, unit) : unit;
   const heroNext = primary ? nextPrediction(model.history[primary]) : null;
+  // Periodi di allenamento continuo (separati da pause > 14 gg) con la media dei miglioramenti sessione dopo sessione
+  const sessRows = useMemo(() => {
+    const periodOf = new Array(hist.length);
+    const periods = [];
+    hist.forEach((s, i) => {
+      if (i === 0 || daysBetween(hist[i - 1].date, s.date) > 14) periods.push({ idx: [] });
+      periods[periods.length - 1].idx.push(i);
+      periodOf[i] = periods.length - 1;
+    });
+    periods.forEach(pd => {
+      const ds = pd.idx.slice(1).map(i => hist[i].deltaPct).filter(v => v != null);
+      pd.avg = ds.length ? ds.reduce((a, v) => a + v, 0) / ds.length : null;
+    });
+    const out = [];
+    const start = Math.max(0, hist.length - 10);
+    for (let i = hist.length - 1; i >= start; i--) {
+      const pd = periods[periodOf[i]];
+      const prevInList = out[out.length - 1];
+      const first = !prevInList || prevInList.pi !== periodOf[i];
+      const gap = i > 0 ? daysBetween(hist[i - 1].date, hist[i].date) : 0;
+      const avg = pd.avg;
+      const tone = avg == null ? 'flat' : Math.abs(avg) < 0.0005 ? 'flat' : avg > 0 ? 'up' : 'down';
+      const avgTxt = avg == null ? '' : `${avg > 0.0005 ? '+' : avg < -0.0005 ? '−' : ''}${num(Math.abs(avg) * 100, 1)}% / sess.`;
+      out.push({ s: hist[i], pi: periodOf[i], first, span: 1, avg, tone, avgTxt, gap, paused: gap > 14 });
+    }
+    // rowSpan = righe visibili dello stesso periodo
+    for (let k = 0; k < out.length; k++) {
+      if (!out[k].first) continue;
+      let n = 1; while (k + n < out.length && out[k + n].pi === out[k].pi) n++;
+      out[k].span = n;
+    }
+    return out;
+  }, [hist]);
   const hasLevel = selected.some(n => primeEstimate(model.history[n])?.from);
 
   return (
@@ -496,21 +529,25 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
       {primary && (
         <Card>
           <CardTitle icon="clock" tone="#A78BFA" sub={translateExercise(primary, exLang)}>{t('recentSessions')}</CardTitle>
-          <table className="table">
-            <thead><tr><th>{t('date')}</th><th>{t('topSet')}</th><th>{t('est1rm')}</th></tr></thead>
+          <table className="table sess">
+            <thead><tr><th className="br-h" /><th>{t('date')}</th><th>{t('topSet')}</th><th>{t('est1rm')}</th></tr></thead>
             <tbody>
-              {[...hist].reverse().slice(0, 10).map(s => {
-                const gap = s.prev ? daysBetween(s.prev.date, s.date) : 0;
-                const paused = gap > 14;
+              {sessRows.map(r => {
+                const s = r.s;
                 return (
                   <React.Fragment key={s.date}>
                     <tr>
-                      <td>{dateShort(lang, s.date)}</td>
+                      {r.first && (
+                        <td className="br-cell" rowSpan={r.span}>
+                          <span className={`br ${r.tone}`}>{r.avg != null && <em>{r.avgTxt}</em>}</span>
+                        </td>
+                      )}
+                      <td className="d-cell">{dateShort(lang, s.date)}</td>
                       <td style={{ color: 'var(--text)', textAlign: 'left' }}>{topSetText({ name: primary, bw: s.bw, topKg: s.topKg, topReps: s.topReps }, unit, t)} {s.isPR && <PRBadge label={t('pr')} />}</td>
-                      <td><span style={{ marginRight: 8 }}>{s.bw ? '' : wu(s.e1rm, unit, primary)}</span><span style={paused ? { opacity: 0.45 } : undefined}><Delta v={s.deltaPct} digits={1} compact /></span></td>
+                      <td><span style={{ marginRight: 8 }}>{s.bw ? '' : wu(s.e1rm, unit, primary)}</span><span style={r.paused ? { opacity: 0.45 } : undefined}><Delta v={s.deltaPct} digits={1} compact /></span></td>
                     </tr>
-                    {paused && (
-                      <tr className="gap-row"><td colSpan={3}><span>{pauseText(lang, gap)}</span></td></tr>
+                    {r.paused && (
+                      <tr className="gap-row"><td colSpan={4}><span>{pauseText(lang, r.gap)}</span></td></tr>
                     )}
                   </React.Fragment>
                 );

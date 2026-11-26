@@ -489,7 +489,6 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
     }
     return out;
   }, [hist]);
-  const hasLevel = selected.some(n => primeEstimate(model.history[n])?.from);
 
   return (
     <div className="screen">
@@ -541,15 +540,7 @@ export default function Progress({ model, lang, exLang, unit, onFile, importing,
           </div>
           <ProgressChart model={model} selected={selected} lang={lang} exLang={exLang} unit={unit} range={range} bands={bands} t={t} shift={shift} setShift={setShift} />
           <div className="hr" />
-          <div className="row between" style={{ alignItems: 'flex-start', gap: 12 }}>
-            <div className="legend">
-              <span><i className="dot" style={{ background: '#1FD17A', opacity: .7 }} />{t('legendGood')}</span>
-              <span><i className="dot" style={{ background: COLORS.warn, opacity: .8 }} />{t('legendPause')}</span>
-              <span><i className="dot" style={{ background: COLORS.down, opacity: .8 }} />{t('legendStop')}</span>
-              <span><i className="dot" style={{ background: '#FFC439' }} />{t('record')}</span>
-              <span><i className="dash" />Trend</span>
-              {hasLevel && <span><i className="dot ring" />Stesso livello di oggi</span>}
-            </div>
+          <div className="row" style={{ justifyContent: 'flex-end' }}>
             <button className="pill" onClick={() => setBands(b => !b)} style={{ color: bands ? COLORS.accent : undefined, background: bands ? 'rgba(47,140,255,.16)' : undefined }}>{bands ? t('bandsOn') : t('bandsOff')}</button>
           </div>
         </Card>

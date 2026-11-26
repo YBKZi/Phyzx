@@ -405,10 +405,14 @@ function ExercisePicker({ list, groups, group, setGroup, query, setQuery, select
 
 export default function Progress({ model, lang, exLang, unit, onFile, importing, msg, profile, profileId = 'main', onProfiles }) {
   const t = makeT(lang);
-  const [selected, setSelected] = useState(() => (model.exerciseList[0] ? [model.exerciseList[0].name] : []));
+  const [favs, setFavs] = useState(() => loadFavs(profileId));
+  // all'apertura: il primo esercizio della scrollina (primo preferito nell'ordine dei chip), altrimenti il primo in assoluto
+  const [selected, setSelected] = useState(() => {
+    const first = model.exerciseList.find(e => favs.includes(e.name)) || model.exerciseList[0];
+    return first ? [first.name] : [];
+  });
   const [query, setQuery] = useState('');
   const [picker, setPicker] = useState(false);
-  const [favs, setFavs] = useState(() => loadFavs(profileId));
   const [range, setRangeRaw] = useState('6m');
   const [shift, setShift] = useState(0);
   const setRange = r => { setRangeRaw(r); setShift(0); };

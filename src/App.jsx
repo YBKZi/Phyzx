@@ -43,37 +43,6 @@ function parseCsv(file) {
   });
 }
 
-function FirstUpload({ onFile, importing, msg, t, profile, multi, onProfiles }) {
-  return (
-    <div className="app">
-      <div className="screen" style={{ minHeight: '82vh', justifyContent: 'center', gap: 22 }}>
-        <div className="row between">
-          <img src={logo} alt="Phyzx" width="56" height="56" style={{ borderRadius: 14, boxShadow: '0 0 0 1px rgba(255,255,255,.08), 0 8px 24px rgba(31,107,255,.28)' }} />
-          <ProfileButton profile={profile} onClick={onProfiles} />
-        </div>
-        <div>
-          <Label>{multi ? `CSV · Liftoff · ${profile.name}` : 'CSV · Liftoff'}</Label>
-          <h1 className="h1">{t('firstTitle')}</h1>
-          <div className="sub" style={{ fontSize: 14 }}>{t('firstSub')}</div>
-        </div>
-        <div style={{ display: 'grid', gap: 10 }}>
-          {['step1', 'step2', 'step3'].map((k, i) => (
-            <div key={k} className="card row" style={{ padding: 14, gap: 14 }}>
-              <span className="mono" style={{ width: 28, height: 28, borderRadius: 10, display: 'grid', placeItems: 'center', background: 'var(--surface-2)', color: '#fff', fontSize: 12 }}>{i + 1}</span>
-              <span style={{ fontSize: 13.5 }}>{t(k)}</span>
-            </div>
-          ))}
-        </div>
-        <label className={`btn ${importing ? 'off' : ''}`}>
-          <Icon name="upload" size={18} stroke={2} />{importing ? t('importing') : t('chooseCsv')}
-          <input type="file" accept=".csv,text/csv" disabled={importing} onChange={e => { const f = e.target.files[0]; e.target.value = ''; if (f) onFile(f); }} />
-        </label>
-        {msg && !msg.ok && <div className="msg err">{msg.text}</div>}
-      </div>
-    </div>
-  );
-}
-
 function Main({ syncKey, onInvalid }) {
   const [profiles, setProfiles] = useState(loadProfiles);
   const [activeId, setActiveId] = useState(() => loadActive(loadProfiles()));
@@ -177,8 +146,6 @@ function Main({ syncKey, onInvalid }) {
     <ProfileSheet profiles={profiles} activeId={activeId} onSwitch={id => switchTo(id)} onAdd={addProfile}
       onRename={renameProfile} onDelete={deleteProfile} sync={syncState} onClose={() => setProfOpen(false)} />
   );
-
-  if (!raw.length) return <><FirstUpload key={`${activeId}-${rev}`} onFile={onFile} importing={importing} msg={msg} t={t} profile={profile} multi={profiles.length > 1} onProfiles={() => setProfOpen(true)} />{sheet}</>;
 
   const props = { model, lang, exLang, unit, onFile, importing, msg, profile, profileId: activeId, onProfiles: () => setProfOpen(true) };
   const items = [
